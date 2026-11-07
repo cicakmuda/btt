@@ -174,30 +174,7 @@ pre.view{white-space:pre-wrap;word-wrap:break-word;font:12.5px/1.5 ui-monospace,
 <div class="sheet" id="settings">
   <div class="panel">
     <div class="phead"><h2>Pengaturan</h2><button class="x" data-close="settings">✕</button></div>
-    <p class="hint">API key hanya disimpan di perangkat ini dan langsung dipakai untuk menghubungi DeepSeek. Tidak dikirim ke Google Sheet.</p>
-    <div class="card">
-      <h3>API Key DeepSeek</h3>
-      <input type="password" id="apiKey" placeholder="sk-…" autocomplete="off">
-      <div class="row2">
-        <div>
-          <label for="model">Model</label>
-          <select id="model">
-            <option value="deepseek-chat">deepseek-chat</option>
-            <option value="deepseek-reasoner">deepseek-reasoner</option>
-            <option value="custom">Lainnya…</option>
-          </select>
-        </div>
-        <div>
-          <label for="temp">Temperature</label>
-          <input type="text" id="temp" inputmode="decimal" value="0.7">
-        </div>
-      </div>
-      <div id="customWrap" class="hidden">
-        <label for="customModel">Nama model</label>
-        <input type="text" id="customModel" placeholder="mis. deepseek-v4">
-      </div>
-      <div class="btns"><button class="btn" id="btnTest">Tes koneksi</button></div>
-    </div>
+    <p class="hint">API key DeepSeek, model, persona, dan rules diatur admin di Google Sheet. Kamu cukup chat dan menilai balasan bot.</p>
     <div class="card">
       <div class="toggle"><span>Tampilkan label tahap flow</span><input type="checkbox" id="showStage" checked></div>
       <div class="meta">Label kuning di bawah balasan bot menunjukkan tahap rules yang sedang dijalankan.</div>
@@ -206,7 +183,7 @@ pre.view{white-space:pre-wrap;word-wrap:break-word;font:12.5px/1.5 ui-monospace,
       <div class="meta" id="whoami"></div>
       <div class="btns"><button class="btn danger" id="btnLogout">Keluar</button></div>
     </div>
-    <div class="btns"><button class="btn primary block" id="btnSaveSettings">Simpan</button></div>
+    <div class="btns"><button class="btn primary block" id="btnSaveSettings">Tutup</button></div>
   </div>
 </div>
 
@@ -249,10 +226,18 @@ pre.view{white-space:pre-wrap;word-wrap:break-word;font:12.5px/1.5 ui-monospace,
 <div class="toast" id="toast"></div>
 
 <script>
-/* =========================================================
-   GANTI dengan URL Web App Apps Script kamu (berakhiran /exec)
-   ========================================================= */
-const API_URL = 'https://script.google.com/macros/s/AKfycbyNmims3aiMv73iXB6E18q-wWHKVhJeJqz8pRmYshiZzcmLGiI5_v0FBVLgOc2lmeUC/exec';
+/* Alamat backend tidak ditulis di sini. Diambil dari "link_aplikasi" di Google Sheet
+   (parameter ?api=...), lalu disimpan di perangkat. Tidak perlu edit file ini. */
+const API_URL = (() => {
+  let fromLink = '';
+  try { fromLink = new URLSearchParams(location.search).get('api') || ''; } catch(e){}
+  const ok = u => /^https:\/\/script\.google(usercontent)?\.com\/.+\/exec$/.test(u);
+  try {
+    if (ok(fromLink)) { localStorage.setItem('fs2_apiUrl', fromLink); return fromLink; }
+    const saved = localStorage.getItem('fs2_apiUrl') || '';
+    return ok(saved) ? saved : '';
+  } catch(e) { return ok(fromLink) ? fromLink : ''; }
+})();
 
 (() => {
   const $ = id => document.getElementById(id);
@@ -270,28 +255,21 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbyNmims3aiMv73iXB6E18q-
   document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => close(b.dataset.close));
   document.querySelectorAll('.sheet').forEach(s => s.addEventListener('click', e => { if (e.target === s) close(s.id); }));
 
-  const STAGE_INSTRUCTION = `
-
-=== INSTRUKSI MODE SIMULASI (bukan bagian dari persona) ===
-Ini adalah simulator untuk menguji rules handling flow di atas. Balas konsumen persis seperti biasa sesuai persona dan rules.
-Lalu, di baris paling akhir setiap balasan, WAJIB tambahkan satu baris dengan format persis:
-[[TAHAP: <nama tahap/langkah di rules handling flow yang sedang kamu jalankan> | ALASAN: <1 kalimat singkat kenapa memilih tahap itu, sebutkan sinyal dari pesan konsumen>]]
-Jika tidak ada rule yang cocok, tulis TAHAP: DI LUAR FLOW. Jangan menyebut baris ini di dalam isi balasan.`;
 
   /* ---------- State ---------- */
   let auth = store.get('auth', null);           // {password, nama, role}
-  let prefs = Object.assign({apiKey:'', model:'deepseek-chat', customModel:'', temp:'0.7', showStage:true}, store.get('prefs', {}));
+  let prefs = Object.assign({showStage:true}, store.get('prefs', {}));
   let chatState = store.get('chat', {session_id:null, config:null, messages:[]});
   let queue = store.get('queue', []);           // pesan yang belum terkirim ke Sheet
   let usage = store.get('usage', {prompt:0, completion:0});
   let busy = false, startingSession = null;
 
   const saveChat = () => store.set('chat', chatState);
-  const modelName = () => prefs.model === 'custom' ? (prefs.customModel || 'deepseek-chat') : prefs.model;
+  const modelName = () => (chatState.config && chatState.config.model) || 'deepseek';
 
   /* ---------- API ke Apps Script ---------- */
   async function api(action, data = {}) {
-    if (!API_URL || API_URL.startsWith('PASTE')) throw new Error('API_URL belum diisi di index.html');
+    if (!API_URL) throw new Error('Buka aplikasi lewat link dari admin (link_aplikasi di Google Sheet, tab Pengaturan)');
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: {'Content-Type': 'text/plain;charset=utf-8'},
@@ -342,7 +320,6 @@ Jika tidak ada rule yang cocok, tulis TAHAP: DI LUAR FLOW. Jangan menyebut baris
     $('hTitle').textContent = auth.role === 'admin' ? 'Flow Simulator · Admin' : 'Flow Simulator';
     updateHeader(); render();
     if (!chatState.config) loadConfig();
-    if (!prefs.apiKey) openSettings();
     flushQueue();
   }
 
@@ -361,7 +338,7 @@ Jika tidak ada rule yang cocok, tulis TAHAP: DI LUAR FLOW. Jangan menyebut baris
     const c = chatState.config, sub = $('sub');
     if (!c) sub.textContent = 'Persona & rules belum dimuat';
     else if (!configReady()) sub.textContent = 'Admin belum mengaktifkan persona/rules';
-    else sub.textContent = `Persona v${c.persona.versi} · Flow v${c.flow.versi} · ${modelName()}` + (prefs.apiKey ? '' : ' · API key belum diisi');
+    else sub.textContent = `Persona v${c.persona.versi} · Flow v${c.flow.versi} · ${modelName()}`;
     document.body.classList.toggle('hide-stage', !prefs.showStage);
     $('usage').textContent = (usage.prompt||usage.completion) ? `Token percakapan ini: ${usage.prompt.toLocaleString('id')} input · ${usage.completion.toLocaleString('id')} output` : '';
   }
@@ -375,7 +352,6 @@ Jika tidak ada rule yang cocok, tulis TAHAP: DI LUAR FLOW. Jangan menyebut baris
       if (!configReady()) e.innerHTML = auth && auth.role === 'admin'
         ? '<b>Belum ada persona/rules aktif.</b><br>Buka <b>Admin</b> untuk upload persona & job scope dan rules flow.'
         : '<b>Belum siap.</b><br>Admin belum mengaktifkan persona & rules. Coba tekan <b>Baru</b> beberapa saat lagi.';
-      else if (!prefs.apiKey) e.innerHTML = '<b>Masukkan API key DeepSeek</b><br>Buka Pengaturan ⚙︎ untuk mengisi API key kamu.';
       else e.innerHTML = '<b>Siap diuji.</b><br>Chat sebagai calon konsumen. Nilai setiap balasan bot dengan ✓ atau ✗. Kalau ✗, tulis apa yang seharusnya bot lakukan.';
       chat.appendChild(e); return;
     }
@@ -481,25 +457,17 @@ Jika tidak ada rule yang cocok, tulis TAHAP: DI LUAR FLOW. Jangan menyebut baris
   setInterval(() => { if (auth && document.visibilityState === 'visible') flushQueue(); }, 30000);
 
   /* ---------- Kirim ke DeepSeek ---------- */
-  function parseStage(text){
-    const m = text.match(/\[\[\s*TAHAP\s*:([\s\S]*?)\]\]/i);
-    if (!m) return {clean: text.trim(), stage: null, reason: null};
-    const parts = m[1].split(/\|\s*ALASAN\s*:/i);
-    return { clean: (text.slice(0, m.index) + text.slice(m.index + m[0].length)).trim(), stage: parts[0].trim(), reason: parts[1] ? parts[1].trim() : null };
-  }
-  const visiblePart = t => { const i = t.indexOf('[['); return (i >= 0 ? t.slice(0, i) : t).trim(); };
-
   async function send(){
     const text = $('input').value.trim();
     if (!text || busy) return;
     if (!configReady()){ toast('Persona/rules belum aktif'); loadConfig(); return; }
-    if (!prefs.apiKey){ openSettings(); toast('Isi API key DeepSeek dulu'); return; }
     $('input').value = ''; autosize();
-    const seq = chatState.messages.filter(m => m.role !== 'error').length + 1;
     chatState.messages = chatState.messages.filter(m => m.role !== 'error');
-    chatState.messages.push({id: uid(), seq, role: 'user', content: text, t: Date.now()});
+    const history = chatState.messages.filter(m => m.role === 'user' || m.role === 'assistant').map(m => ({role: m.role, content: m.content}));
+    const seq = history.length + 1;
+    const userMsg = {id: uid(), seq, role: 'user', content: text, t: Date.now()};
+    chatState.messages.push(userMsg);
     saveChat(); render();
-    ensureSession().catch(()=>{});
     busy = true; $('send').disabled = true;
 
     const row = document.createElement('div'); row.className = 'row bot';
@@ -507,47 +475,20 @@ Jika tidak ada rule yang cocok, tulis TAHAP: DI LUAR FLOW. Jangan menyebut baris
     row.appendChild(b); chat.appendChild(row); chat.scrollTop = chat.scrollHeight;
 
     const c = chatState.config;
-    const system = c.persona.konten.trim() + '\n\n=== RULES HANDLING FLOW ===\n' + c.flow.konten.trim() + STAGE_INSTRUCTION;
-    const hist = chatState.messages.filter(m => m.role === 'user' || m.role === 'assistant').map(m => ({role: m.role, content: m.content}));
-    const body = {model: modelName(), messages: [{role:'system', content: system}, ...hist], stream: true, stream_options: {include_usage: true}};
-    const t = parseFloat(String(prefs.temp).replace(',', '.'));
-    if (!isNaN(t) && modelName() !== 'deepseek-reasoner') body.temperature = t;
-
-    let full = '';
     try {
-      const res = await fetch('https://api.deepseek.com/chat/completions', {
-        method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + prefs.apiKey}, body: JSON.stringify(body)
+      const j = await api('chat', {
+        session_id: chatState.session_id, persona_ver: c.persona.versi, flow_ver: c.flow.versi, history,
+        user_msg: {msg_id: userMsg.id, urutan: seq, konten: text, waktu: new Date(userMsg.t).toISOString()},
+        bot_msg_id: uid()
       });
-      if (!res.ok){
-        let msg = 'HTTP ' + res.status;
-        try { const j = await res.json(); msg += ' — ' + ((j.error && j.error.message) || JSON.stringify(j)); } catch(e){}
-        if (res.status === 401) msg += '\nAPI key tidak valid.';
-        if (res.status === 402) msg += '\nSaldo DeepSeek habis.';
-        throw new Error(msg);
-      }
-      const reader = res.body.getReader(), dec = new TextDecoder(); let buf = '';
-      while (true){
-        const {done, value} = await reader.read(); if (done) break;
-        buf += dec.decode(value, {stream: true});
-        const lines = buf.split('\n'); buf = lines.pop();
-        for (const line of lines){
-          const l = line.trim(); if (!l.startsWith('data:')) continue;
-          const data = l.slice(5).trim(); if (data === '[DONE]') continue;
-          try {
-            const j = JSON.parse(data);
-            const d = j.choices && j.choices[0] && j.choices[0].delta;
-            if (d && d.content){ full += d.content; b.classList.remove('typing'); b.textContent = visiblePart(full) || '…'; chat.scrollTop = chat.scrollHeight; }
-            if (j.usage){ usage.prompt += j.usage.prompt_tokens || 0; usage.completion += j.usage.completion_tokens || 0; store.set('usage', usage); }
-          } catch(e){}
-        }
-      }
-      const p = parseStage(full);
-      chatState.messages.push({id: uid(), seq: seq + 1, role: 'assistant', content: p.clean || '(balasan kosong)', stage: p.stage, reason: p.reason, rating: '', note: '', t: Date.now()});
+      chatState.session_id = j.session_id;
+      userMsg.synced = true;
+      chatState.messages.push({id: j.reply.msg_id, seq: seq + 1, role: 'assistant', content: j.reply.konten, stage: j.reply.tahap, reason: j.reply.alasan, rating: '', note: '', t: Date.now(), synced: true});
+      usage.prompt += j.usage.prompt; usage.completion += j.usage.completion; store.set('usage', usage);
       saveChat();
-      flushQueue();
     } catch(err) {
       let msg = String(err.message || err);
-      if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) msg = 'Gagal terhubung ke DeepSeek. Cek koneksi internet atau API key.';
+      if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) msg = 'Gagal terhubung. Cek koneksi internet lalu kirim lagi.';
       // pesan konsumen yang gagal dibalas dikembalikan ke kolom input
       chatState.messages.pop();
       $('input').value = text; autosize();
@@ -580,28 +521,13 @@ Jika tidak ada rule yang cocok, tulis TAHAP: DI LUAR FLOW. Jangan menyebut baris
 
   /* ---------- Settings ---------- */
   function openSettings(){
-    $('apiKey').value = prefs.apiKey; $('model').value = prefs.model; $('customModel').value = prefs.customModel;
-    $('customWrap').classList.toggle('hidden', prefs.model !== 'custom');
-    $('temp').value = prefs.temp; $('showStage').checked = prefs.showStage;
+    $('showStage').checked = prefs.showStage;
     $('whoami').textContent = auth ? `Masuk sebagai ${auth.nama} (${auth.role === 'admin' ? 'admin' : 'tester'})` : '';
     open('settings');
   }
   $('btnSettings').onclick = openSettings;
-  $('model').onchange = () => $('customWrap').classList.toggle('hidden', $('model').value !== 'custom');
-  $('btnSaveSettings').onclick = () => {
-    prefs = {apiKey: $('apiKey').value.trim(), model: $('model').value, customModel: $('customModel').value.trim(), temp: $('temp').value.trim() || '0.7', showStage: $('showStage').checked};
-    store.set('prefs', prefs); close('settings'); updateHeader(); render();
-  };
-  $('btnTest').onclick = async () => {
-    const key = $('apiKey').value.trim(); if (!key){ toast('Isi API key dulu'); return; }
-    toast('Mengetes…');
-    try {
-      const r = await fetch('https://api.deepseek.com/user/balance', {headers: {'Authorization': 'Bearer ' + key}});
-      if (!r.ok){ toast('Gagal: HTTP ' + r.status + (r.status === 401 ? ' (key salah)' : '')); return; }
-      const j = await r.json(); const bi = j.balance_infos && j.balance_infos[0];
-      toast('Terhubung ✓' + (bi ? ` Saldo: ${bi.total_balance} ${bi.currency}` : ''));
-    } catch(e) { toast('Tidak bisa terhubung ke DeepSeek'); }
-  };
+  $('showStage').addEventListener('change', () => { prefs = {showStage: $('showStage').checked}; store.set('prefs', prefs); updateHeader(); });
+  $('btnSaveSettings').onclick = () => close('settings');
 
   /* ---------- Input ---------- */
   const input = $('input');
@@ -832,7 +758,11 @@ Jika tidak ada rule yang cocok, tulis TAHAP: DI LUAR FLOW. Jangan menyebut baris
 
   /* ---------- Start ---------- */
   if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
-  if (auth) showApp(); else $('login').classList.remove('hidden');
+  if (auth && API_URL) showApp();
+  else {
+    $('login').classList.remove('hidden');
+    if (!API_URL) $('lErr').textContent = 'Aplikasi belum terhubung. Buka lewat link_aplikasi dari Google Sheet (tab Pengaturan).';
+  }
 })();
 </script>
 </body>
