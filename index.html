@@ -15,29 +15,43 @@
   --bg:#efe9e1; --surface:#ffffff; --ink:#1b1f1d; --muted:#6b726e; --line:#e2ddd5;
   --brand:#0f5f4a; --brand-ink:#ffffff; --bot:#ffffff; --me:#d7f3e3;
   --tag-bg:#fff4d6; --tag-ink:#7a5300; --danger:#b3261e; --chip:#eef2ef;
+  --ok:#1b7f4d; --ok-bg:#d7f3e3; --bad-bg:#fde3e1;
 }
 @media (prefers-color-scheme: dark){
   :root{
     --bg:#0e1311; --surface:#171d1a; --ink:#e7ece9; --muted:#97a19c; --line:#26302b;
     --brand:#1f8a6c; --brand-ink:#ffffff; --bot:#1d2521; --me:#14453a;
     --tag-bg:#3a2f12; --tag-ink:#f3cf73; --danger:#ff8a80; --chip:#202a25;
+    --ok:#7fd8ac; --ok-bg:#14453a; --bad-bg:#4a1f1c;
   }
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;height:100dvh}
 button{font:inherit;cursor:pointer}
-header{background:var(--brand);color:var(--brand-ink);padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:10px}
+.hidden{display:none!important}
+
+/* Login */
+#login{flex:1;display:flex;align-items:center;justify-content:center;padding:24px 16px}
+.login-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px 20px;width:100%;max-width:380px}
+.login-card .logo{width:56px;height:56px;border-radius:14px;display:block;margin:0 auto 12px}
+.login-card h1{text-align:center;font-size:20px;margin:0 0 4px}
+.login-card p{text-align:center;color:var(--muted);font-size:13.5px;margin:0 0 18px}
+.lerr{color:var(--danger);font-size:13px;min-height:18px;margin-top:8px;text-align:center}
+
+/* App */
+#app{flex:1;display:flex;flex-direction:column;min-height:0}
+header{background:var(--brand);color:var(--brand-ink);padding:calc(10px + env(safe-area-inset-top)) 12px 10px 16px;display:flex;align-items:center;gap:6px}
 header .ttl{flex:1;min-width:0}
 header h1{font-size:16px;margin:0;font-weight:650}
 header .sub{font-size:12px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hbtn{background:rgba(255,255,255,.14);color:inherit;border:0;border-radius:10px;padding:7px 10px;font-size:13px}
+.hbtn{background:rgba(255,255,255,.14);color:inherit;border:0;border-radius:10px;padding:7px 10px;font-size:13px;flex:none}
 .hbtn:active{background:rgba(255,255,255,.25)}
 
 #chat{flex:1;overflow-y:auto;padding:14px 12px 8px;display:flex;flex-direction:column;gap:6px}
 .empty{margin:auto;max-width:340px;text-align:center;color:var(--muted);font-size:14px;padding:20px}
 .empty b{color:var(--ink)}
-.row{display:flex;flex-direction:column;max-width:82%}
+.row{display:flex;flex-direction:column;max-width:84%}
 .row.me{align-self:flex-end;align-items:flex-end}
 .row.bot{align-self:flex-start;align-items:flex-start}
 .bubble{padding:8px 11px;border-radius:12px;white-space:pre-wrap;word-wrap:break-word;box-shadow:0 1px 0 rgba(0,0,0,.06)}
@@ -45,9 +59,16 @@ header .sub{font-size:12px;opacity:.85;white-space:nowrap;overflow:hidden;text-o
 .bot .bubble{background:var(--bot);border-top-left-radius:4px}
 .stage{margin-top:3px;font-size:11.5px;background:var(--tag-bg);color:var(--tag-ink);border-radius:6px;padding:2px 7px;max-width:100%}
 .stage b{font-weight:650}
+body.hide-stage #chat .stage{display:none}
+.rate{display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap}
+.rbtn{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:2px 10px;font-size:12.5px}
+.rbtn.on-ok{background:var(--ok-bg);color:var(--ok);border-color:transparent;font-weight:600}
+.rbtn.on-bad{background:var(--bad-bg);color:var(--danger);border-color:transparent;font-weight:600}
+.note{font-size:12px;color:var(--muted);border-left:2px solid var(--danger);padding:1px 0 1px 7px;margin-top:3px;cursor:pointer;white-space:pre-wrap}
+.sync{font-size:10.5px;color:var(--muted)}
 .err .bubble{background:transparent;color:var(--danger);border:1px dashed var(--danger);box-shadow:none;font-size:13px}
 .typing{color:var(--muted);font-style:italic}
-body.hide-stage .stage{display:none}
+.divider{font-size:12px;color:var(--muted);text-align:center;padding:4px 0}
 
 footer{background:var(--surface);border-top:1px solid var(--line);padding:8px 10px calc(8px + env(safe-area-inset-bottom));display:flex;gap:8px;align-items:flex-end}
 #input{flex:1;resize:none;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:20px;padding:9px 14px;font:inherit;max-height:120px;min-height:40px}
@@ -55,64 +76,107 @@ footer{background:var(--surface);border-top:1px solid var(--line);padding:8px 10
 #send{background:var(--brand);color:var(--brand-ink);border:0;border-radius:50%;width:42px;height:42px;flex:none;display:grid;place-items:center}
 #send:disabled{opacity:.45}
 
-/* Sheet */
-.sheet{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-end;justify-content:center;z-index:10}
+/* Sheets & modals */
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center;z-index:10}
 .sheet.open{display:flex}
-.panel{background:var(--surface);width:100%;max-width:640px;max-height:92dvh;overflow-y:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom))}
-.panel h2{margin:0 0 4px;font-size:17px}
-.panel .hint{color:var(--muted);font-size:13px;margin:0 0 14px}
+.panel{background:var(--surface);width:100%;max-width:680px;max-height:94dvh;overflow-y:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom))}
+.panel.tall{height:94dvh}
+.phead{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.phead h2{margin:0;font-size:17px;flex:1}
+.x{border:0;background:var(--chip);color:var(--ink);border-radius:50%;width:32px;height:32px;font-size:16px}
+.hint{color:var(--muted);font-size:13px;margin:0 0 14px}
 .card{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
-.card h3{margin:0 0 2px;font-size:14.5px;display:flex;align-items:center;gap:8px}
-.card .meta{font-size:12px;color:var(--muted);margin-bottom:8px}
-.status{font-size:11px;padding:2px 7px;border-radius:999px;background:var(--chip);color:var(--muted);font-weight:500}
-.status.ok{background:#d7f3e3;color:#0f5f4a}
-@media (prefers-color-scheme: dark){.status.ok{background:#14453a;color:#9be3c6}}
-label{font-size:12.5px;color:var(--muted);display:block;margin:6px 0 4px}
+.card h3{margin:0 0 6px;font-size:14.5px;display:flex;align-items:center;gap:8px}
+.meta{font-size:12px;color:var(--muted)}
+label{font-size:12.5px;color:var(--muted);display:block;margin:8px 0 4px}
 input[type=text],input[type=password],select,textarea{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:9px 11px;font:inherit;font-size:14px}
-textarea{min-height:120px;resize:vertical;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px}
-.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+textarea{min-height:130px;resize:vertical;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px}
+textarea.plain{font-family:inherit;font-size:14px;min-height:90px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:8px 12px;font-size:13px}
 .btn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
 .btn.danger{color:var(--danger)}
+.btn.block{width:100%;padding:11px;font-size:15px}
+.btn:disabled{opacity:.5}
 .toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;padding:4px 0}
 .toggle input{width:20px;height:20px;accent-color:var(--brand)}
+.check{display:flex;align-items:center;gap:8px;font-size:13.5px;margin-top:8px}
+.check input{width:18px;height:18px;accent-color:var(--brand)}
 .row2{display:flex;gap:8px}.row2>div{flex:1}
 input[type=file]{display:none}
-.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--muted);font-weight:500}
+.badge.on{background:var(--ok-bg);color:var(--ok);font-weight:650}
+.badge.bad{background:var(--bad-bg);color:var(--danger);font-weight:650}
+
+.tabs{display:flex;gap:4px;background:var(--chip);border-radius:12px;padding:4px;margin:8px 0 14px}
+.tab{flex:1;border:0;background:transparent;color:var(--muted);border-radius:9px;padding:8px 6px;font-size:13.5px}
+.tab.on{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.vitem{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.vitem:first-child{border-top:0}
+.vitem .vmain{flex:1;min-width:0}
+.vitem .vtitle{font-weight:600;font-size:14px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.vitem .vnote{font-size:13px;color:var(--muted);margin-top:2px;word-wrap:break-word}
+.vitem .vact{display:flex;flex-direction:column;gap:6px;flex:none}
+.vitem .btn{padding:5px 10px;font-size:12.5px}
+.sitem{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;cursor:pointer;background:var(--surface);width:100%;text-align:left;color:inherit}
+.sitem:active{background:var(--chip)}
+.sitem .top{display:flex;justify-content:space-between;gap:8px;font-weight:600;font-size:14px}
+.sitem .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.loading{color:var(--muted);font-size:13.5px;padding:16px 0;text-align:center}
+pre.view{white-space:pre-wrap;word-wrap:break-word;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);border-radius:10px;padding:12px;margin:0;max-height:60dvh;overflow:auto}
+.tview .row{max-width:92%}
+.tview{display:flex;flex-direction:column;gap:6px;background:var(--bg);border-radius:12px;padding:12px}
+
+.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30;max-width:90%;text-align:center}
 .toast.show{opacity:1}
 .usage{font-size:12px;color:var(--muted);text-align:center;padding:2px 0 6px}
 </style>
 </head>
 <body>
-<header>
-  <div class="ttl">
+
+<!-- LOGIN -->
+<div id="login" class="hidden">
+  <div class="login-card">
+    <img class="logo" src="icon.svg" alt="">
     <h1>Flow Simulator</h1>
-    <div class="sub" id="sub">Belum siap — buka Pengaturan</div>
+    <p>Simulasi chat dengan bot CS untuk menguji handling flow.</p>
+    <label for="lNama">Nama (opsional)</label>
+    <input type="text" id="lNama" placeholder="mis. Rina" autocomplete="name">
+    <label for="lPass">Password</label>
+    <input type="password" id="lPass" placeholder="Password dari admin" autocomplete="current-password">
+    <div class="btns"><button class="btn primary block" id="btnLogin">Masuk</button></div>
+    <div class="lerr" id="lErr"></div>
   </div>
-  <button class="hbtn" id="btnReset" title="Mulai percakapan baru">Reset</button>
-  <button class="hbtn" id="btnExport" title="Export transcript">Export</button>
-  <button class="hbtn" id="btnSettings">⚙︎</button>
-</header>
+</div>
 
-<div id="chat"></div>
-<div class="usage" id="usage"></div>
+<!-- APP -->
+<div id="app" class="hidden">
+  <header>
+    <div class="ttl">
+      <h1 id="hTitle">Flow Simulator</h1>
+      <div class="sub" id="sub">Memuat…</div>
+    </div>
+    <button class="hbtn hidden" id="btnAdmin">Admin</button>
+    <button class="hbtn" id="btnReset" title="Mulai percakapan baru">Baru</button>
+    <button class="hbtn" id="btnSettings" aria-label="Pengaturan">⚙︎</button>
+  </header>
+  <div id="chat"></div>
+  <div class="usage" id="usage"></div>
+  <footer>
+    <textarea id="input" rows="1" placeholder="Ketik sebagai calon konsumen…"></textarea>
+    <button id="send" aria-label="Kirim">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6l.01 6.53L15 12 3.41 13.87z"/></svg>
+    </button>
+  </footer>
+</div>
 
-<footer>
-  <textarea id="input" rows="1" placeholder="Ketik sebagai calon konsumen…"></textarea>
-  <button id="send" aria-label="Kirim">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6l.01 6.53L15 12 3.41 13.87z"/></svg>
-  </button>
-</footer>
-
-<!-- Settings sheet -->
-<div class="sheet" id="sheet">
+<!-- SETTINGS (semua user) -->
+<div class="sheet" id="settings">
   <div class="panel">
-    <h2>Pengaturan</h2>
-    <p class="hint">Semua data hanya disimpan di perangkat ini (browser). Upload file .txt / .md, atau tempel teksnya langsung.</p>
-
+    <div class="phead"><h2>Pengaturan</h2><button class="x" data-close="settings">✕</button></div>
+    <p class="hint">API key hanya disimpan di perangkat ini dan langsung dipakai untuk menghubungi DeepSeek. Tidak dikirim ke Google Sheet.</p>
     <div class="card">
-      <h3>1. API Key DeepSeek <span class="status" id="stKey">kosong</span></h3>
-      <label for="apiKey">API key</label>
+      <h3>API Key DeepSeek</h3>
       <input type="password" id="apiKey" placeholder="sk-…" autocomplete="off">
       <div class="row2">
         <div>
@@ -128,56 +192,83 @@ input[type=file]{display:none}
           <input type="text" id="temp" inputmode="decimal" value="0.7">
         </div>
       </div>
-      <div id="customWrap" style="display:none">
+      <div id="customWrap" class="hidden">
         <label for="customModel">Nama model</label>
         <input type="text" id="customModel" placeholder="mis. deepseek-v4">
       </div>
       <div class="btns"><button class="btn" id="btnTest">Tes koneksi</button></div>
     </div>
-
     <div class="card">
-      <h3>2. Persona &amp; Job Scope <span class="status" id="stPersona">kosong</span></h3>
-      <div class="meta" id="mPersona">Termasuk info produk Glowgen.</div>
-      <textarea id="persona" placeholder="Tempel atau upload persona & job scope di sini…"></textarea>
-      <div class="btns">
-        <button class="btn" data-upload="persona">Upload file</button>
-        <button class="btn danger" data-clear="persona">Hapus</button>
-      </div>
-      <input type="file" id="file-persona" accept=".txt,.md,.markdown,.json,text/plain,text/markdown">
+      <div class="toggle"><span>Tampilkan label tahap flow</span><input type="checkbox" id="showStage" checked></div>
+      <div class="meta">Label kuning di bawah balasan bot menunjukkan tahap rules yang sedang dijalankan.</div>
     </div>
-
     <div class="card">
-      <h3>3. Rules Handling Flow <span class="status" id="stFlow">kosong</span></h3>
-      <div class="meta" id="mFlow">Upload versi baru kapan saja untuk menguji perubahan rules.</div>
-      <textarea id="flow" placeholder="Tempel atau upload rules handling flow di sini…"></textarea>
-      <div class="btns">
-        <button class="btn" data-upload="flow">Upload file</button>
-        <button class="btn danger" data-clear="flow">Hapus</button>
-      </div>
-      <input type="file" id="file-flow" accept=".txt,.md,.markdown,.json,text/plain,text/markdown">
+      <div class="meta" id="whoami"></div>
+      <div class="btns"><button class="btn danger" id="btnLogout">Keluar</button></div>
     </div>
+    <div class="btns"><button class="btn primary block" id="btnSaveSettings">Simpan</button></div>
+  </div>
+</div>
 
-    <div class="card">
-      <h3>Mode uji</h3>
-      <div class="toggle"><span>Tampilkan label tahap flow di bawah balasan bot</span><input type="checkbox" id="showStage" checked></div>
-      <div class="meta" style="margin:4px 0 0">Bot diminta melaporkan tahap flow yang sedang ia jalankan + alasannya. Label ini hanya terlihat di simulator, tidak masuk ke isi pesan.</div>
+<!-- ADMIN -->
+<div class="sheet" id="admin">
+  <div class="panel tall">
+    <div class="phead"><h2>Panel Admin</h2><button class="x" data-close="admin">✕</button></div>
+    <div class="tabs">
+      <button class="tab on" data-tab="persona">Persona &amp; Job</button>
+      <button class="tab" data-tab="flow">Rules Flow</button>
+      <button class="tab" data-tab="hasil">Hasil Tes</button>
     </div>
+    <div id="adminBody"></div>
+  </div>
+</div>
 
+<!-- NOTE MODAL -->
+<div class="sheet" id="noteSheet">
+  <div class="panel">
+    <div class="phead"><h2 id="noteTitle">Kenapa balasan ini salah?</h2><button class="x" data-close="noteSheet">✕</button></div>
+    <p class="hint">Tulis apa yang seharusnya bot lakukan. Catatan ini jadi bahan perbaikan rules.</p>
+    <textarea class="plain" id="noteText" placeholder="mis. Harusnya tanya kebutuhan kulit dulu, bukan langsung kasih harga"></textarea>
     <div class="btns">
-      <button class="btn primary" id="btnSave">Simpan &amp; tutup</button>
+      <button class="btn primary" id="noteSave">Simpan</button>
+      <button class="btn danger" id="noteClear">Hapus penilaian</button>
     </div>
+  </div>
+</div>
+
+<!-- VIEWER MODAL -->
+<div class="sheet" id="viewer">
+  <div class="panel tall">
+    <div class="phead"><h2 id="vTitle"></h2><button class="x" data-close="viewer">✕</button></div>
+    <div id="vMeta" class="meta" style="margin-bottom:10px"></div>
+    <div id="vBody"></div>
+    <div class="btns" id="vActs"></div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
+/* =========================================================
+   GANTI dengan URL Web App Apps Script kamu (berakhiran /exec)
+   ========================================================= */
+const API_URL = 'PASTE_URL_WEB_APP_DI_SINI';
+
 (() => {
   const $ = id => document.getElementById(id);
   const store = {
-    get(k, d){ try { const v = localStorage.getItem('fs_'+k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } },
-    set(k, v){ try { localStorage.setItem('fs_'+k, JSON.stringify(v)); } catch(e){} }
+    get(k, d){ try { const v = localStorage.getItem('fs2_'+k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } },
+    set(k, v){ try { localStorage.setItem('fs2_'+k, JSON.stringify(v)); } catch(e){} },
+    del(k){ try { localStorage.removeItem('fs2_'+k); } catch(e){} }
   };
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  const fmtDate = s => { const d = new Date(s); return isNaN(d) ? '' : d.toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); };
+  function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2600); }
+  function open(id){ $(id).classList.add('open'); }
+  function close(id){ $(id).classList.remove('open'); }
+  document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => close(b.dataset.close));
+  document.querySelectorAll('.sheet').forEach(s => s.addEventListener('click', e => { if (e.target === s) close(s.id); }));
 
   const STAGE_INSTRUCTION = `
 
@@ -187,251 +278,561 @@ Lalu, di baris paling akhir setiap balasan, WAJIB tambahkan satu baris dengan fo
 [[TAHAP: <nama tahap/langkah di rules handling flow yang sedang kamu jalankan> | ALASAN: <1 kalimat singkat kenapa memilih tahap itu, sebutkan sinyal dari pesan konsumen>]]
 Jika tidak ada rule yang cocok, tulis TAHAP: DI LUAR FLOW. Jangan menyebut baris ini di dalam isi balasan.`;
 
-  let cfg = {
-    apiKey: store.get('apiKey',''),
-    model: store.get('model','deepseek-chat'),
-    customModel: store.get('customModel',''),
-    temp: store.get('temp','0.7'),
-    persona: store.get('persona',''),
-    personaName: store.get('personaName',''),
-    flow: store.get('flow',''),
-    flowName: store.get('flowName',''),
-    flowVer: store.get('flowVer',0),
-    showStage: store.get('showStage',true)
-  };
-  let messages = store.get('messages', []); // {role, content, stage?, reason?, flowVer?, t}
+  /* ---------- State ---------- */
+  let auth = store.get('auth', null);           // {password, nama, role}
+  let prefs = Object.assign({apiKey:'', model:'deepseek-chat', customModel:'', temp:'0.7', showStage:true}, store.get('prefs', {}));
+  let chatState = store.get('chat', {session_id:null, config:null, messages:[]});
+  let queue = store.get('queue', []);           // pesan yang belum terkirim ke Sheet
   let usage = store.get('usage', {prompt:0, completion:0});
-  let busy = false;
+  let busy = false, startingSession = null;
 
-  const chat = $('chat');
+  const saveChat = () => store.set('chat', chatState);
+  const modelName = () => prefs.model === 'custom' ? (prefs.customModel || 'deepseek-chat') : prefs.model;
 
-  function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2200); }
-  function modelName(){ return cfg.model === 'custom' ? (cfg.customModel || 'deepseek-chat') : cfg.model; }
-  function ready(){ return cfg.apiKey && cfg.persona.trim() && cfg.flow.trim(); }
+  /* ---------- API ke Apps Script ---------- */
+  async function api(action, data = {}) {
+    if (!API_URL || API_URL.startsWith('PASTE')) throw new Error('API_URL belum diisi di index.html');
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(Object.assign({action, password: auth && auth.password, nama: auth && auth.nama}, data))
+    });
+    let j;
+    try { j = await res.json(); } catch(e) { throw new Error('Respon server tidak valid. Cek deploy Apps Script.'); }
+    if (!j.ok) {
+      if (/Password salah/.test(j.error) && auth && auth.role) { logout(true); }
+      throw new Error(j.error);
+    }
+    return j;
+  }
+
+  /* ---------- Login ---------- */
+  async function doLogin(){
+    const pw = $('lPass').value.trim(), nama = $('lNama').value.trim();
+    $('lErr').textContent = '';
+    if (!pw){ $('lErr').textContent = 'Isi password dulu'; return; }
+    $('btnLogin').disabled = true; $('btnLogin').textContent = 'Memeriksa…';
+    try {
+      auth = {password: pw, nama};
+      const j = await api('login');
+      auth = {password: pw, nama: j.user.nama, role: j.user.role};
+      store.set('auth', auth);
+      $('lPass').value = '';
+      showApp();
+    } catch(e) {
+      auth = null; $('lErr').textContent = e.message;
+    }
+    $('btnLogin').disabled = false; $('btnLogin').textContent = 'Masuk';
+  }
+  $('btnLogin').onclick = doLogin;
+  $('lPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+  function logout(silent){
+    auth = null; store.del('auth');
+    chatState = {session_id:null, config:null, messages:[]}; saveChat();
+    close('settings'); close('admin');
+    $('app').classList.add('hidden'); $('login').classList.remove('hidden');
+    if (silent) $('lErr').textContent = 'Password sudah diganti admin. Silakan masuk lagi.';
+  }
+  $('btnLogout').onclick = () => { if (confirm('Keluar dari aplikasi?')) logout(false); };
+
+  function showApp(){
+    $('login').classList.add('hidden'); $('app').classList.remove('hidden');
+    $('btnAdmin').classList.toggle('hidden', auth.role !== 'admin');
+    $('hTitle').textContent = auth.role === 'admin' ? 'Flow Simulator · Admin' : 'Flow Simulator';
+    updateHeader(); render();
+    if (!chatState.config) loadConfig();
+    if (!prefs.apiKey) openSettings();
+    flushQueue();
+  }
+
+  /* ---------- Config (persona & rules aktif) ---------- */
+  async function loadConfig(){
+    $('sub').textContent = 'Memuat persona & rules…';
+    try {
+      const j = await api('config');
+      chatState.config = j.config; saveChat();
+    } catch(e) { toast(e.message); }
+    updateHeader(); render();
+  }
+  const configReady = () => chatState.config && chatState.config.persona && chatState.config.flow;
 
   function updateHeader(){
-    const sub = $('sub');
-    if (!ready()){
-      const miss = [];
-      if(!cfg.apiKey) miss.push('API key');
-      if(!cfg.persona.trim()) miss.push('Persona');
-      if(!cfg.flow.trim()) miss.push('Rules flow');
-      sub.textContent = 'Belum lengkap: ' + miss.join(', ');
-    } else {
-      sub.textContent = modelName() + ' · Flow v' + cfg.flowVer + (cfg.flowName ? ' ('+cfg.flowName+')' : '');
-    }
-    document.body.classList.toggle('hide-stage', !cfg.showStage);
-    $('usage').textContent = (usage.prompt||usage.completion) ? `Token sesi ini: ${usage.prompt.toLocaleString('id')} input · ${usage.completion.toLocaleString('id')} output` : '';
+    const c = chatState.config, sub = $('sub');
+    if (!c) sub.textContent = 'Persona & rules belum dimuat';
+    else if (!configReady()) sub.textContent = 'Admin belum mengaktifkan persona/rules';
+    else sub.textContent = `Persona v${c.persona.versi} · Flow v${c.flow.versi} · ${modelName()}` + (prefs.apiKey ? '' : ' · API key belum diisi');
+    document.body.classList.toggle('hide-stage', !prefs.showStage);
+    $('usage').textContent = (usage.prompt||usage.completion) ? `Token percakapan ini: ${usage.prompt.toLocaleString('id')} input · ${usage.completion.toLocaleString('id')} output` : '';
   }
 
-  function parseStage(text){
-    const m = text.match(/\[\[\s*TAHAP\s*:([\s\S]*?)\]\]/i);
-    if(!m) return {clean: text.trim(), stage:null, reason:null};
-    const inner = m[1];
-    const parts = inner.split(/\|\s*ALASAN\s*:/i);
-    return {
-      clean: (text.slice(0,m.index) + text.slice(m.index+m[0].length)).trim(),
-      stage: parts[0].trim(),
-      reason: parts[1] ? parts[1].trim() : null
-    };
-  }
-  function visiblePart(text){ const i = text.indexOf('[['); return (i>=0 ? text.slice(0,i) : text).trim(); }
-
+  /* ---------- Chat render ---------- */
+  const chat = $('chat');
   function render(){
     chat.innerHTML = '';
-    if (!messages.length){
-      const e = document.createElement('div'); e.className='empty';
-      e.innerHTML = ready()
-        ? '<b>Siap diuji.</b><br>Mulai chat sebagai calon konsumen Glowgen. Label kuning di bawah balasan bot menunjukkan tahap flow yang sedang dijalankan.'
-        : '<b>Lengkapi 3 hal di Pengaturan ⚙︎</b><br>API key DeepSeek, Persona &amp; Job Scope, dan Rules Handling Flow.';
+    if (!chatState.messages.length){
+      const e = document.createElement('div'); e.className = 'empty';
+      if (!configReady()) e.innerHTML = auth && auth.role === 'admin'
+        ? '<b>Belum ada persona/rules aktif.</b><br>Buka <b>Admin</b> untuk upload persona & job scope dan rules flow.'
+        : '<b>Belum siap.</b><br>Admin belum mengaktifkan persona & rules. Coba tekan <b>Baru</b> beberapa saat lagi.';
+      else if (!prefs.apiKey) e.innerHTML = '<b>Masukkan API key DeepSeek</b><br>Buka Pengaturan ⚙︎ untuk mengisi API key kamu.';
+      else e.innerHTML = '<b>Siap diuji.</b><br>Chat sebagai calon konsumen. Nilai setiap balasan bot dengan ✓ atau ✗. Kalau ✗, tulis apa yang seharusnya bot lakukan.';
       chat.appendChild(e); return;
     }
-    let lastVer = null;
-    messages.forEach(m => {
-      if (m.role==='assistant' && m.flowVer!=null && lastVer!=null && m.flowVer!==lastVer){
-        const n=document.createElement('div'); n.className='usage'; n.textContent='— rules flow diganti ke v'+m.flowVer+' —'; chat.appendChild(n);
-      }
-      if (m.role==='assistant' && m.flowVer!=null) lastVer = m.flowVer;
-      chat.appendChild(bubble(m));
-    });
+    chatState.messages.forEach(m => chat.appendChild(bubble(m, true)));
     chat.scrollTop = chat.scrollHeight;
   }
 
-  function bubble(m){
+  function bubble(m, interactive){
     const row = document.createElement('div');
-    row.className = 'row ' + (m.role==='user' ? 'me' : m.role==='error' ? 'bot err' : 'bot');
-    const b = document.createElement('div'); b.className='bubble'; b.textContent = m.content;
+    row.className = 'row ' + (m.role === 'user' ? 'me' : m.role === 'error' ? 'bot err' : 'bot');
+    const b = document.createElement('div'); b.className = 'bubble'; b.textContent = m.content;
     row.appendChild(b);
-    if (m.role==='assistant'){
-      const s = document.createElement('div'); s.className='stage';
-      if (m.stage){
-        s.innerHTML = '<b>Tahap:</b> ' + esc(m.stage) + (m.reason ? ' — ' + esc(m.reason) : '');
-      } else { s.innerHTML = '<b>Tahap:</b> (bot tidak melaporkan tahap)'; }
+    if (m.role === 'assistant'){
+      const s = document.createElement('div'); s.className = 'stage';
+      s.innerHTML = '<b>Tahap:</b> ' + (m.stage ? esc(m.stage) + (m.reason ? ' — ' + esc(m.reason) : '') : '(tidak dilaporkan)');
       row.appendChild(s);
+      if (interactive){
+        const r = document.createElement('div'); r.className = 'rate';
+        const ok = document.createElement('button'); ok.className = 'rbtn' + (m.rating === 'ok' ? ' on-ok' : ''); ok.textContent = '✓ Sesuai';
+        const bad = document.createElement('button'); bad.className = 'rbtn' + (m.rating === 'salah' ? ' on-bad' : ''); bad.textContent = '✗ Salah';
+        ok.onclick = () => setRating(m, m.rating === 'ok' ? '' : 'ok', m.rating === 'ok' ? '' : m.note || '');
+        bad.onclick = () => openNote(m);
+        r.append(ok, bad);
+        if (!m.synced){ const sy = document.createElement('span'); sy.className = 'sync'; sy.textContent = '· belum tersimpan'; r.appendChild(sy); }
+        row.appendChild(r);
+      }
+      if (m.note){
+        const n = document.createElement('div'); n.className = 'note'; n.textContent = m.note;
+        if (interactive) n.onclick = () => openNote(m);
+        row.appendChild(n);
+      }
     }
     return row;
   }
-  function esc(s){ return s.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-  function buildPayload(){
-    const sys = cfg.persona.trim() + '\n\n=== RULES HANDLING FLOW ===\n' + cfg.flow.trim() + STAGE_INSTRUCTION;
-    const hist = messages.filter(m=>m.role==='user'||m.role==='assistant').map(m=>({role:m.role, content:m.content}));
-    const body = { model: modelName(), messages: [{role:'system', content: sys}, ...hist], stream: true, stream_options:{include_usage:true} };
-    const t = parseFloat(String(cfg.temp).replace(',','.'));
-    if (!isNaN(t) && modelName()!=='deepseek-reasoner') body.temperature = t;
-    return body;
+  /* ---------- Rating ---------- */
+  let noteTarget = null;
+  function openNote(m){
+    noteTarget = m; $('noteText').value = m.note || '';
+    $('noteClear').classList.toggle('hidden', !m.rating);
+    open('noteSheet'); setTimeout(()=>$('noteText').focus(), 50);
   }
+  $('noteSave').onclick = () => { if (noteTarget) setRating(noteTarget, 'salah', $('noteText').value.trim()); close('noteSheet'); };
+  $('noteClear').onclick = () => { if (noteTarget) setRating(noteTarget, '', ''); close('noteSheet'); };
+
+  async function setRating(m, rating, note){
+    m.rating = rating; m.note = note; saveChat(); render();
+    try {
+      if (!m.synced) await flushQueue();
+      if (!m.synced) throw new Error('belum tersimpan');
+      await api('rate', {msg_id: m.id, rating, catatan: note});
+    } catch(e) {
+      m.pendingRate = true; saveChat();
+      toast('Penilaian disimpan di HP, akan dikirim ulang otomatis');
+    }
+  }
+
+  /* ---------- Sinkron ke Sheet ---------- */
+  async function ensureSession(){
+    if (chatState.session_id) return chatState.session_id;
+    if (!startingSession){
+      startingSession = api('startSession', {
+        persona_ver: chatState.config.persona.versi, flow_ver: chatState.config.flow.versi, model: modelName()
+      }).then(j => { chatState.session_id = j.session_id; saveChat(); return j.session_id; })
+        .finally(() => { startingSession = null; });
+    }
+    return startingSession;
+  }
+
+  let flushing = null;
+  function flushQueue(){
+    if (flushing) return flushing;
+    flushing = (async () => {
+      try {
+        const unsynced = chatState.messages.filter(m => (m.role === 'user' || m.role === 'assistant') && !m.synced);
+        if (unsynced.length && configReady()){
+          const sid = await ensureSession();
+          const c = chatState.config;
+          await api('log', {items: unsynced.map(m => ({
+            msg_id: m.id, session_id: sid, urutan: m.seq, waktu: new Date(m.t).toISOString(), role: m.role,
+            konten: m.content, tahap: m.stage || '', alasan: m.reason || '',
+            persona_ver: c.persona.versi, flow_ver: c.flow.versi, rating: m.rating || '', catatan: m.note || ''
+          }))});
+          unsynced.forEach(m => { m.synced = true; m.pendingRate = false; });
+          saveChat();
+        }
+        for (const m of chatState.messages.filter(x => x.synced && x.pendingRate)){
+          await api('rate', {msg_id: m.id, rating: m.rating || '', catatan: m.note || ''});
+          m.pendingRate = false; saveChat();
+        }
+        // sisa antrean dari percakapan lama
+        while (queue.length){
+          const q = queue[0];
+          await api(q.action, q.data);
+          queue.shift(); store.set('queue', queue);
+        }
+      } catch(e) { /* coba lagi nanti */ }
+      if (!busy) render();
+    })().finally(() => { flushing = null; });
+    return flushing;
+  }
+  window.addEventListener('online', flushQueue);
+  setInterval(() => { if (auth && document.visibilityState === 'visible') flushQueue(); }, 30000);
+
+  /* ---------- Kirim ke DeepSeek ---------- */
+  function parseStage(text){
+    const m = text.match(/\[\[\s*TAHAP\s*:([\s\S]*?)\]\]/i);
+    if (!m) return {clean: text.trim(), stage: null, reason: null};
+    const parts = m[1].split(/\|\s*ALASAN\s*:/i);
+    return { clean: (text.slice(0, m.index) + text.slice(m.index + m[0].length)).trim(), stage: parts[0].trim(), reason: parts[1] ? parts[1].trim() : null };
+  }
+  const visiblePart = t => { const i = t.indexOf('[['); return (i >= 0 ? t.slice(0, i) : t).trim(); };
 
   async function send(){
     const text = $('input').value.trim();
     if (!text || busy) return;
-    if (!ready()){ openSettings(); toast('Lengkapi pengaturan dulu'); return; }
-    $('input').value=''; autosize();
-    messages.push({role:'user', content:text, t:Date.now()});
-    save(); render();
+    if (!configReady()){ toast('Persona/rules belum aktif'); loadConfig(); return; }
+    if (!prefs.apiKey){ openSettings(); toast('Isi API key DeepSeek dulu'); return; }
+    $('input').value = ''; autosize();
+    const seq = chatState.messages.filter(m => m.role !== 'error').length + 1;
+    chatState.messages = chatState.messages.filter(m => m.role !== 'error');
+    chatState.messages.push({id: uid(), seq, role: 'user', content: text, t: Date.now()});
+    saveChat(); render();
+    ensureSession().catch(()=>{});
     busy = true; $('send').disabled = true;
 
-    const row = document.createElement('div'); row.className='row bot';
-    const b = document.createElement('div'); b.className='bubble typing'; b.textContent='mengetik…';
+    const row = document.createElement('div'); row.className = 'row bot';
+    const b = document.createElement('div'); b.className = 'bubble typing'; b.textContent = 'mengetik…';
     row.appendChild(b); chat.appendChild(row); chat.scrollTop = chat.scrollHeight;
 
+    const c = chatState.config;
+    const system = c.persona.konten.trim() + '\n\n=== RULES HANDLING FLOW ===\n' + c.flow.konten.trim() + STAGE_INSTRUCTION;
+    const hist = chatState.messages.filter(m => m.role === 'user' || m.role === 'assistant').map(m => ({role: m.role, content: m.content}));
+    const body = {model: modelName(), messages: [{role:'system', content: system}, ...hist], stream: true, stream_options: {include_usage: true}};
+    const t = parseFloat(String(prefs.temp).replace(',', '.'));
+    if (!isNaN(t) && modelName() !== 'deepseek-reasoner') body.temperature = t;
+
     let full = '';
-    try{
+    try {
       const res = await fetch('https://api.deepseek.com/chat/completions', {
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.apiKey},
-        body: JSON.stringify(buildPayload())
+        method: 'POST', headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + prefs.apiKey}, body: JSON.stringify(body)
       });
-      if(!res.ok){
-        let msg = 'HTTP '+res.status;
-        try{ const j = await res.json(); msg += ' — ' + (j.error && j.error.message || JSON.stringify(j)); }catch(e){}
-        if(res.status===401) msg += '\nAPI key tidak valid.';
-        if(res.status===402) msg += '\nSaldo DeepSeek habis.';
+      if (!res.ok){
+        let msg = 'HTTP ' + res.status;
+        try { const j = await res.json(); msg += ' — ' + ((j.error && j.error.message) || JSON.stringify(j)); } catch(e){}
+        if (res.status === 401) msg += '\nAPI key tidak valid.';
+        if (res.status === 402) msg += '\nSaldo DeepSeek habis.';
         throw new Error(msg);
       }
-      const reader = res.body.getReader(); const dec = new TextDecoder(); let buf='';
-      while(true){
-        const {done, value} = await reader.read(); if(done) break;
-        buf += dec.decode(value, {stream:true});
+      const reader = res.body.getReader(), dec = new TextDecoder(); let buf = '';
+      while (true){
+        const {done, value} = await reader.read(); if (done) break;
+        buf += dec.decode(value, {stream: true});
         const lines = buf.split('\n'); buf = lines.pop();
         for (const line of lines){
-          const l = line.trim(); if(!l.startsWith('data:')) continue;
-          const data = l.slice(5).trim(); if(data==='[DONE]') continue;
-          try{
+          const l = line.trim(); if (!l.startsWith('data:')) continue;
+          const data = l.slice(5).trim(); if (data === '[DONE]') continue;
+          try {
             const j = JSON.parse(data);
             const d = j.choices && j.choices[0] && j.choices[0].delta;
             if (d && d.content){ full += d.content; b.classList.remove('typing'); b.textContent = visiblePart(full) || '…'; chat.scrollTop = chat.scrollHeight; }
-            if (j.usage){ usage.prompt += j.usage.prompt_tokens||0; usage.completion += j.usage.completion_tokens||0; }
-          }catch(e){}
+            if (j.usage){ usage.prompt += j.usage.prompt_tokens || 0; usage.completion += j.usage.completion_tokens || 0; store.set('usage', usage); }
+          } catch(e){}
         }
       }
       const p = parseStage(full);
-      messages.push({role:'assistant', content:p.clean || '(balasan kosong)', stage:p.stage, reason:p.reason, flowVer:cfg.flowVer, t:Date.now()});
-    }catch(err){
-      let msg = String(err.message||err);
+      chatState.messages.push({id: uid(), seq: seq + 1, role: 'assistant', content: p.clean || '(balasan kosong)', stage: p.stage, reason: p.reason, rating: '', note: '', t: Date.now()});
+      saveChat();
+      flushQueue();
+    } catch(err) {
+      let msg = String(err.message || err);
       if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) msg = 'Gagal terhubung ke DeepSeek. Cek koneksi internet atau API key.';
-      messages.push({role:'error', content:msg, t:Date.now()});
+      // pesan konsumen yang gagal dibalas dikembalikan ke kolom input
+      chatState.messages.pop();
+      $('input').value = text; autosize();
+      chatState.messages.push({id: uid(), role: 'error', content: msg, t: Date.now()});
+      saveChat();
     }
-    busy=false; $('send').disabled=false;
-    save(); render(); updateHeader();
+    busy = false; $('send').disabled = false;
+    render(); updateHeader();
   }
 
-  function save(){ store.set('messages', messages); store.set('usage', usage); }
+  /* ---------- Percakapan baru ---------- */
+  $('btnReset').onclick = async () => {
+    if (chatState.messages.some(m => m.role !== 'error') && !confirm('Mulai percakapan baru? Percakapan ini sudah tersimpan di Sheet.')) return;
+    await flushQueue();
+    const left = chatState.messages.filter(m => (m.role === 'user' || m.role === 'assistant') && (!m.synced || m.pendingRate));
+    if (left.length && chatState.session_id){
+      // simpan sisa yang belum terkirim ke antrean global
+      const c = chatState.config;
+      left.filter(m => !m.synced).length && queue.push({action:'log', data:{items: left.filter(m=>!m.synced).map(m => ({
+        msg_id: m.id, session_id: chatState.session_id, urutan: m.seq, waktu: new Date(m.t).toISOString(), role: m.role,
+        konten: m.content, tahap: m.stage || '', alasan: m.reason || '', persona_ver: c.persona.versi, flow_ver: c.flow.versi,
+        rating: m.rating || '', catatan: m.note || ''}))}});
+      left.filter(m => m.synced && m.pendingRate).forEach(m => queue.push({action:'rate', data:{msg_id: m.id, rating: m.rating || '', catatan: m.note || ''}}));
+      store.set('queue', queue);
+    }
+    chatState = {session_id: null, config: null, messages: []}; saveChat();
+    usage = {prompt: 0, completion: 0}; store.set('usage', usage);
+    await loadConfig();
+  };
 
-  // Settings
+  /* ---------- Settings ---------- */
   function openSettings(){
-    $('apiKey').value = cfg.apiKey; $('model').value = cfg.model; $('customModel').value = cfg.customModel;
-    $('customWrap').style.display = cfg.model==='custom' ? 'block':'none';
-    $('temp').value = cfg.temp; $('persona').value = cfg.persona; $('flow').value = cfg.flow;
-    $('showStage').checked = cfg.showStage; refreshStatus();
-    $('sheet').classList.add('open');
+    $('apiKey').value = prefs.apiKey; $('model').value = prefs.model; $('customModel').value = prefs.customModel;
+    $('customWrap').classList.toggle('hidden', prefs.model !== 'custom');
+    $('temp').value = prefs.temp; $('showStage').checked = prefs.showStage;
+    $('whoami').textContent = auth ? `Masuk sebagai ${auth.nama} (${auth.role === 'admin' ? 'admin' : 'tester'})` : '';
+    open('settings');
   }
-  function refreshStatus(){
-    setSt('stKey', $('apiKey').value.trim(), 'tersimpan');
-    setSt('stPersona', $('persona').value.trim(), cfg.personaName || 'terisi');
-    setSt('stFlow', $('flow').value.trim(), 'v'+(cfg.flowVer||1));
-    $('mPersona').textContent = $('persona').value.trim() ? `${$('persona').value.length.toLocaleString('id')} karakter${cfg.personaName?' · '+cfg.personaName:''}` : 'Termasuk info produk Glowgen.';
-    $('mFlow').textContent = $('flow').value.trim() ? `${$('flow').value.length.toLocaleString('id')} karakter${cfg.flowName?' · '+cfg.flowName:''}` : 'Upload versi baru kapan saja untuk menguji perubahan rules.';
-  }
-  function setSt(id, ok, label){ const e=$(id); e.textContent = ok ? label : 'kosong'; e.classList.toggle('ok', !!ok); }
-
-  function saveSettings(){
-    const newFlow = $('flow').value;
-    if (newFlow.trim() && newFlow !== cfg.flow){
-      cfg.flowVer = (cfg.flowVer||0) + 1;
-      if (messages.length) toast('Rules flow v'+cfg.flowVer+' aktif — berlaku mulai balasan berikutnya');
-    }
-    cfg.apiKey = $('apiKey').value.trim(); cfg.model = $('model').value; cfg.customModel = $('customModel').value.trim();
-    cfg.temp = $('temp').value.trim() || '0.7'; cfg.persona = $('persona').value; cfg.flow = newFlow;
-    cfg.showStage = $('showStage').checked;
-    Object.entries(cfg).forEach(([k,v])=>store.set(k,v));
-    $('sheet').classList.remove('open'); updateHeader(); render();
-  }
-
-  document.querySelectorAll('[data-upload]').forEach(btn=>{
-    const key = btn.dataset.upload; const inp = $('file-'+key);
-    btn.onclick = () => inp.click();
-    inp.onchange = async () => {
-      const f = inp.files[0]; if(!f) return;
-      const txt = await f.text();
-      $(key).value = txt;
-      if (key==='persona') cfg.personaName = f.name; else cfg.flowName = f.name;
-      refreshStatus(); toast(f.name + ' dimuat'); inp.value='';
-    };
-  });
-  document.querySelectorAll('[data-clear]').forEach(btn=>{
-    btn.onclick = () => { const k=btn.dataset.clear; $(k).value=''; if(k==='persona') cfg.personaName=''; else cfg.flowName=''; refreshStatus(); };
-  });
-  ['apiKey','persona','flow'].forEach(id=>$(id).addEventListener('input', refreshStatus));
-  $('model').onchange = () => { $('customWrap').style.display = $('model').value==='custom' ? 'block':'none'; };
-  $('btnSave').onclick = saveSettings;
   $('btnSettings').onclick = openSettings;
-  $('sheet').addEventListener('click', e=>{ if(e.target.id==='sheet') saveSettings(); });
-
+  $('model').onchange = () => $('customWrap').classList.toggle('hidden', $('model').value !== 'custom');
+  $('btnSaveSettings').onclick = () => {
+    prefs = {apiKey: $('apiKey').value.trim(), model: $('model').value, customModel: $('customModel').value.trim(), temp: $('temp').value.trim() || '0.7', showStage: $('showStage').checked};
+    store.set('prefs', prefs); close('settings'); updateHeader(); render();
+  };
   $('btnTest').onclick = async () => {
-    const key = $('apiKey').value.trim(); if(!key){ toast('Isi API key dulu'); return; }
+    const key = $('apiKey').value.trim(); if (!key){ toast('Isi API key dulu'); return; }
     toast('Mengetes…');
-    try{
-      const r = await fetch('https://api.deepseek.com/user/balance', {headers:{'Authorization':'Bearer '+key}});
-      if(!r.ok){ toast('Gagal: HTTP '+r.status + (r.status===401?' (key salah)':'')); return; }
+    try {
+      const r = await fetch('https://api.deepseek.com/user/balance', {headers: {'Authorization': 'Bearer ' + key}});
+      if (!r.ok){ toast('Gagal: HTTP ' + r.status + (r.status === 401 ? ' (key salah)' : '')); return; }
       const j = await r.json(); const bi = j.balance_infos && j.balance_infos[0];
       toast('Terhubung ✓' + (bi ? ` Saldo: ${bi.total_balance} ${bi.currency}` : ''));
-    }catch(e){ toast('Tidak bisa terhubung ke DeepSeek'); }
+    } catch(e) { toast('Tidak bisa terhubung ke DeepSeek'); }
   };
 
-  $('btnReset').onclick = () => {
-    if (!messages.length) return;
-    if (!confirm('Mulai percakapan baru? Chat sekarang akan dihapus (export dulu kalau perlu).')) return;
-    messages = []; usage = {prompt:0, completion:0}; save(); render(); updateHeader();
-  };
-
-  $('btnExport').onclick = () => {
-    if (!messages.length){ toast('Belum ada percakapan'); return; }
-    const d = new Date(); const pad = n=>String(n).padStart(2,'0');
-    const stamp = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
-    let out = `TRANSCRIPT SIMULASI HANDLING FLOW\nTanggal: ${d.toLocaleString('id-ID')}\nModel: ${modelName()}\nPersona: ${cfg.personaName||'(teks manual)'}\nRules flow: v${cfg.flowVer} ${cfg.flowName?'('+cfg.flowName+')':'(teks manual)'}\n\n`;
-    messages.forEach(m=>{
-      const time = new Date(m.t).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
-      if (m.role==='user') out += `[${time}] KONSUMEN:\n${m.content}\n\n`;
-      else if (m.role==='assistant') out += `[${time}] BOT:\n${m.content}\n  >> Tahap: ${m.stage||'(tidak dilaporkan)'}${m.reason?' | Alasan: '+m.reason:''}${m.flowVer!=null?' | flow v'+m.flowVer:''}\n\n`;
-      else out += `[${time}] ERROR: ${m.content}\n\n`;
-    });
-    out += `Token: ${usage.prompt} input / ${usage.completion} output\n`;
-    const blob = new Blob([out], {type:'text/plain'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `simulasi-flow_${stamp}.txt`;
-    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
-  };
-
+  /* ---------- Input ---------- */
   const input = $('input');
-  function autosize(){ input.style.height='auto'; input.style.height = Math.min(input.scrollHeight,120)+'px'; }
+  function autosize(){ input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; }
   input.addEventListener('input', autosize);
-  input.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey && !('ontouchstart' in window)){ e.preventDefault(); send(); } });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !('ontouchstart' in window)){ e.preventDefault(); send(); } });
   $('send').onclick = send;
 
-  if ('serviceWorker' in navigator) { window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+  /* =========================================================
+     PANEL ADMIN
+     ========================================================= */
+  let adminTab = 'persona';
+  const body = $('adminBody');
+  const LABEL = {persona: 'Persona & Job Scope', flow: 'Rules Handling Flow'};
 
-  updateHeader(); render();
-  if (!ready()) openSettings();
+  $('btnAdmin').onclick = () => { open('admin'); showTab(adminTab); };
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => showTab(t.dataset.tab));
+
+  function showTab(tab){
+    adminTab = tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === tab));
+    if (tab === 'hasil') renderResults(); else renderVersions(tab);
+  }
+
+  async function renderVersions(tipe){
+    body.innerHTML = `
+      <div class="card">
+        <h3>Upload versi baru</h3>
+        <div class="meta">${tipe === 'persona' ? 'Persona bot, job scope, dan info produk.' : 'Rules handling flow percakapan.'} Upload file .txt/.md atau tempel teks.</div>
+        <textarea id="vText" placeholder="Tempel ${LABEL[tipe]} di sini…"></textarea>
+        <input type="file" id="vFile" accept=".txt,.md,.markdown,.json,text/plain,text/markdown">
+        <div class="meta" id="vInfo" style="margin-top:4px"></div>
+        <label for="vNote">Catatan perubahan</label>
+        <input type="text" id="vNote" placeholder="mis. tambah handling keberatan ongkir">
+        <label class="check"><input type="checkbox" id="vActive" checked> Langsung aktifkan untuk semua tester</label>
+        <div class="btns">
+          <button class="btn" id="vUpload">Pilih file</button>
+          <button class="btn primary" id="vSave">Simpan versi</button>
+        </div>
+      </div>
+      <div class="card"><h3>Riwayat versi</h3><div id="vList" class="loading">Memuat…</div></div>`;
+    const ta = $('vText');
+    const info = () => $('vInfo').textContent = ta.value ? ta.value.length.toLocaleString('id') + ' karakter' : '';
+    ta.addEventListener('input', info);
+    $('vUpload').onclick = () => $('vFile').click();
+    $('vFile').onchange = async () => {
+      const f = $('vFile').files[0]; if (!f) return;
+      ta.value = await f.text(); info();
+      if (!$('vNote').value) $('vNote').value = f.name;
+      $('vFile').value = '';
+    };
+    $('vSave').onclick = async () => {
+      if (!ta.value.trim()){ toast('Isi masih kosong'); return; }
+      $('vSave').disabled = true; $('vSave').textContent = 'Menyimpan…';
+      try {
+        const j = await api('saveVersion', {tipe, konten: ta.value, catatan: $('vNote').value.trim(), aktifkan: $('vActive').checked});
+        toast(`${LABEL[tipe]} v${j.version.versi} tersimpan` + (j.version.aktif ? ' & aktif' : ''));
+        if (j.version.aktif) afterActivate();
+        renderVersions(tipe);
+      } catch(e) { toast(e.message); $('vSave').disabled = false; $('vSave').textContent = 'Simpan versi'; }
+    };
+    try {
+      const j = await api('listVersions', {tipe});
+      const list = $('vList'); list.className = '';
+      if (!j.versions.length){ list.innerHTML = '<div class="meta">Belum ada versi.</div>'; return; }
+      list.innerHTML = '';
+      j.versions.forEach(v => {
+        const it = document.createElement('div'); it.className = 'vitem';
+        it.innerHTML = `<div class="vmain">
+            <div class="vtitle">v${esc(v.versi)} ${v.aktif ? '<span class="badge on">AKTIF</span>' : ''}</div>
+            <div class="vnote">${esc(v.catatan || '—')}</div>
+            <div class="meta">${esc(fmtDate(v.dibuat))} · ${Number(v.panjang).toLocaleString('id')} karakter</div>
+          </div><div class="vact"></div>`;
+        const act = it.querySelector('.vact');
+        const see = document.createElement('button'); see.className = 'btn'; see.textContent = 'Lihat';
+        see.onclick = () => viewVersion(v.id, tipe);
+        act.appendChild(see);
+        if (!v.aktif){
+          const on = document.createElement('button'); on.className = 'btn primary'; on.textContent = 'Aktifkan';
+          on.onclick = async () => {
+            if (!confirm(`Aktifkan ${LABEL[tipe]} v${v.versi} untuk semua tester?`)) return;
+            try { await api('activate', {id: v.id}); toast(`v${v.versi} aktif`); afterActivate(); renderVersions(tipe); } catch(e){ toast(e.message); }
+          };
+          act.appendChild(on);
+        }
+        list.appendChild(it);
+      });
+    } catch(e) { $('vList').textContent = e.message; }
+  }
+
+  function afterActivate(){
+    // percakapan admin yang kosong langsung pakai versi baru
+    if (!chatState.messages.some(m => m.role !== 'error')){ chatState.config = null; saveChat(); loadConfig(); }
+    else toast('Versi baru berlaku saat tester menekan "Baru"');
+  }
+
+  async function viewVersion(id, tipe){
+    $('vTitle').textContent = 'Memuat…'; $('vMeta').textContent = ''; $('vBody').innerHTML = ''; $('vActs').innerHTML = '';
+    open('viewer');
+    try {
+      const {version: v} = await api('getVersion', {id});
+      $('vTitle').textContent = `${LABEL[tipe]} v${v.versi}`;
+      $('vMeta').textContent = `${fmtDate(v.dibuat)} · ${v.catatan || 'tanpa catatan'}${v.aktif ? ' · AKTIF' : ''}`;
+      const pre = document.createElement('pre'); pre.className = 'view'; pre.textContent = v.konten; $('vBody').appendChild(pre);
+      const edit = document.createElement('button'); edit.className = 'btn primary'; edit.textContent = 'Edit sebagai versi baru';
+      edit.onclick = () => { close('viewer'); showTab(tipe); setTimeout(() => { $('vText').value = v.konten; $('vText').dispatchEvent(new Event('input')); $('vNote').value = `revisi dari v${v.versi}: `; $('vNote').focus(); }, 0); };
+      const dl = document.createElement('button'); dl.className = 'btn'; dl.textContent = 'Unduh .txt';
+      dl.onclick = () => download(`${tipe}-v${v.versi}.txt`, v.konten);
+      $('vActs').append(edit, dl);
+    } catch(e) { $('vTitle').textContent = 'Gagal'; $('vMeta').textContent = e.message; }
+  }
+
+  async function renderResults(){
+    body.innerHTML = `<div class="card">
+        <h3>Export paket improvement</h3>
+        <div class="meta">Berisi ringkasan, semua balasan bertanda ✗ beserta catatannya, transcript lengkap, dan isi persona & rules yang dipakai. Kirim file ini ke Claude untuk dianalisis.</div>
+        <label for="fVer">Filter versi rules flow</label>
+        <select id="fVer"><option value="">Semua sesi</option></select>
+        <div class="btns"><button class="btn primary" id="btnExport">Export .txt</button></div>
+      </div>
+      <div id="sList" class="loading">Memuat sesi…</div>`;
+    $('btnExport').onclick = () => exportPack($('fVer').value);
+    try {
+      const [s, v] = await Promise.all([api('sessions'), api('listVersions', {tipe: 'flow'})]);
+      v.versions.forEach(x => { const o = document.createElement('option'); o.value = x.versi; o.textContent = `Flow v${x.versi}` + (x.aktif ? ' (aktif)' : ''); $('fVer').appendChild(o); });
+      const draw = () => {
+        const f = $('fVer').value;
+        const list = s.sessions.filter(x => !f || String(x.flow_ver) === f);
+        const el = $('sList'); el.className = ''; el.innerHTML = '';
+        if (!list.length){ el.innerHTML = '<div class="meta" style="text-align:center;padding:12px">Belum ada sesi tes.</div>'; return; }
+        const tot = list.reduce((a, x) => ({ok: a.ok + x.ok, salah: a.salah + x.salah}), {ok: 0, salah: 0});
+        const sum = document.createElement('div'); sum.className = 'meta'; sum.style.margin = '0 0 8px';
+        sum.textContent = `${list.length} sesi · ${tot.ok} balasan ✓ · ${tot.salah} balasan ✗`;
+        el.appendChild(sum);
+        list.forEach(x => {
+          const it = document.createElement('button'); it.className = 'sitem';
+          it.innerHTML = `<div class="top"><span>${esc(x.tester)}</span><span class="meta">${esc(fmtDate(x.update_terakhir))}</span></div>
+            <div class="chips"><span class="badge">Persona v${esc(x.persona_ver)}</span><span class="badge">Flow v${esc(x.flow_ver)}</span>
+            <span class="badge">${x.pesan} pesan</span>${x.ok ? `<span class="badge on">✓ ${x.ok}</span>` : ''}${x.salah ? `<span class="badge bad">✗ ${x.salah}</span>` : ''}</div>`;
+          it.onclick = () => viewSession(x);
+          el.appendChild(it);
+        });
+      };
+      $('fVer').onchange = draw; draw();
+    } catch(e) { $('sList').textContent = e.message; }
+  }
+
+  async function viewSession(s){
+    $('vTitle').textContent = `Sesi ${s.tester}`; $('vMeta').textContent = `${fmtDate(s.mulai)} · Persona v${s.persona_ver} · Flow v${s.flow_ver} · ${s.model}`;
+    $('vBody').innerHTML = '<div class="loading">Memuat…</div>'; $('vActs').innerHTML = '';
+    open('viewer');
+    try {
+      const j = await api('getSession', {session_id: s.session_id});
+      const box = document.createElement('div'); box.className = 'tview';
+      j.messages.forEach(m => {
+        const row = bubble({role: m.role, content: m.konten, stage: m.tahap, reason: m.alasan, note: m.catatan}, false);
+        if (m.role === 'assistant' && m.rating){
+          const r = document.createElement('div'); r.className = 'rate';
+          r.innerHTML = m.rating === 'ok' ? '<span class="badge on">✓ Sesuai</span>' : '<span class="badge bad">✗ Salah</span>';
+          row.insertBefore(r, row.querySelector('.note'));
+        }
+        box.appendChild(row);
+      });
+      $('vBody').innerHTML = ''; $('vBody').appendChild(box);
+      const dl = document.createElement('button'); dl.className = 'btn'; dl.textContent = 'Unduh transcript';
+      dl.onclick = () => download(`sesi_${s.session_id}.txt`, transcriptText(j.messages, s));
+      $('vActs').appendChild(dl);
+    } catch(e) { $('vBody').textContent = e.message; }
+  }
+
+  function transcriptText(msgs, s){
+    let out = s ? `SESI ${s.session_id} — ${s.tester} — Persona v${s.persona_ver} / Flow v${s.flow_ver} — ${s.model}\n\n` : '';
+    msgs.forEach(m => {
+      if (m.role === 'user') out += `KONSUMEN: ${m.konten}\n\n`;
+      else {
+        out += `BOT: ${m.konten}\n  >> Tahap: ${m.tahap || '(tidak dilaporkan)'}${m.alasan ? ' | Alasan: ' + m.alasan : ''}\n`;
+        if (m.rating) out += `  >> Penilaian: ${m.rating === 'ok' ? '✓ SESUAI' : '✗ SALAH'}${m.catatan ? ' — ' + m.catatan : ''}\n`;
+        out += '\n';
+      }
+    });
+    return out;
+  }
+
+  async function exportPack(flowVer){
+    toast('Menyusun paket…');
+    try {
+      const {data} = await api('export', {flow_ver: flowVer});
+      const bySession = {};
+      data.messages.forEach(m => (bySession[m.session_id] = bySession[m.session_id] || []).push(m));
+      const bot = data.messages.filter(m => m.role === 'assistant');
+      const ok = bot.filter(m => m.rating === 'ok').length, bad = bot.filter(m => m.rating === 'salah');
+      const now = new Date();
+      let out = `PAKET IMPROVEMENT — FLOW SIMULATOR\nDibuat: ${now.toLocaleString('id-ID')}\nFilter: ${flowVer ? 'Rules Flow v' + flowVer : 'semua sesi'}\n`;
+      out += `\n=== RINGKASAN ===\nSesi: ${data.sessions.length}\nBalasan bot: ${bot.length} (✓ ${ok}, ✗ ${bad.length}, belum dinilai ${bot.length - ok - bad.length})\n`;
+      const stages = {};
+      bot.forEach(m => { const k = m.tahap || '(tidak dilaporkan)'; stages[k] = stages[k] || {n:0, bad:0}; stages[k].n++; if (m.rating === 'salah') stages[k].bad++; });
+      out += '\nTahap yang dipakai bot (jumlah / jumlah ✗):\n';
+      Object.entries(stages).sort((a, b) => b[1].n - a[1].n).forEach(([k, v]) => out += `- ${k}: ${v.n} / ✗ ${v.bad}\n`);
+
+      out += `\n=== BALASAN BERTANDA ✗ (bahan perbaikan utama) ===\n`;
+      if (!bad.length) out += '(tidak ada)\n';
+      bad.forEach((m, i) => {
+        const list = bySession[m.session_id];
+        const idx = list.indexOf(m);
+        const prevUser = [...list.slice(0, idx)].reverse().find(x => x.role === 'user');
+        out += `\n[${i + 1}] Sesi ${m.session_id} · ${m.tester} · Flow v${m.flow_ver}\n`;
+        if (prevUser) out += `KONSUMEN: ${prevUser.konten}\n`;
+        out += `BOT: ${m.konten}\nTAHAP: ${m.tahap || '-'}${m.alasan ? ' | ALASAN: ' + m.alasan : ''}\nCATATAN PENGUJI: ${m.catatan || '(tanpa catatan)'}\n`;
+      });
+
+      out += `\n=== TRANSCRIPT LENGKAP ===\n`;
+      data.sessions.forEach(s => { out += '\n----------------------------------------\n' + transcriptText(bySession[s.session_id] || [], s); });
+
+      out += `\n=== ISI VERSI YANG DIPAKAI ===\n`;
+      data.versions.forEach(v => out += `\n----- ${v.tipe === 'flow' ? 'RULES FLOW' : 'PERSONA & JOB SCOPE'} v${v.versi}${v.catatan ? ' (' + v.catatan + ')' : ''} -----\n${v.konten}\n`);
+
+      const pad = n => String(n).padStart(2, '0');
+      download(`paket-improvement_${flowVer ? 'flow-v' + flowVer + '_' : ''}${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}.txt`, out);
+    } catch(e) { toast(e.message); }
+  }
+
+  function download(name, text){
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], {type: 'text/plain;charset=utf-8'}));
+    a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  /* ---------- Start ---------- */
+  if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  if (auth) showApp(); else $('login').classList.remove('hidden');
 })();
 </script>
 </body>

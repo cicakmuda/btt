@@ -1,5 +1,5 @@
 // Cache app shell only; API calls to DeepSeek always go to the network.
-const CACHE = 'flow-sim-v1';
+const CACHE = 'flow-sim-v2';
 const SHELL = ['./', './index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
