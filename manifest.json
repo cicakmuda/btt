@@ -1,0 +1,15 @@
+{
+  "name": "Flow Simulator",
+  "short_name": "Flow Sim",
+  "description": "Simulator chatbot untuk menguji rules handling flow customer",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#efe9e1",
+  "theme_color": "#0f5f4a",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

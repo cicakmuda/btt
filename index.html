@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flow Simulator</title>
+<meta name="theme-color" content="#0f5f4a">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Flow Sim">
+<style>
+:root{
+  --bg:#efe9e1; --surface:#ffffff; --ink:#1b1f1d; --muted:#6b726e; --line:#e2ddd5;
+  --brand:#0f5f4a; --brand-ink:#ffffff; --bot:#ffffff; --me:#d7f3e3;
+  --tag-bg:#fff4d6; --tag-ink:#7a5300; --danger:#b3261e; --chip:#eef2ef;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1311; --surface:#171d1a; --ink:#e7ece9; --muted:#97a19c; --line:#26302b;
+    --brand:#1f8a6c; --brand-ink:#ffffff; --bot:#1d2521; --me:#14453a;
+    --tag-bg:#3a2f12; --tag-ink:#f3cf73; --danger:#ff8a80; --chip:#202a25;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;height:100dvh}
+button{font:inherit;cursor:pointer}
+header{background:var(--brand);color:var(--brand-ink);padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:10px}
+header .ttl{flex:1;min-width:0}
+header h1{font-size:16px;margin:0;font-weight:650}
+header .sub{font-size:12px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbtn{background:rgba(255,255,255,.14);color:inherit;border:0;border-radius:10px;padding:7px 10px;font-size:13px}
+.hbtn:active{background:rgba(255,255,255,.25)}
+
+#chat{flex:1;overflow-y:auto;padding:14px 12px 8px;display:flex;flex-direction:column;gap:6px}
+.empty{margin:auto;max-width:340px;text-align:center;color:var(--muted);font-size:14px;padding:20px}
+.empty b{color:var(--ink)}
+.row{display:flex;flex-direction:column;max-width:82%}
+.row.me{align-self:flex-end;align-items:flex-end}
+.row.bot{align-self:flex-start;align-items:flex-start}
+.bubble{padding:8px 11px;border-radius:12px;white-space:pre-wrap;word-wrap:break-word;box-shadow:0 1px 0 rgba(0,0,0,.06)}
+.me .bubble{background:var(--me);border-top-right-radius:4px}
+.bot .bubble{background:var(--bot);border-top-left-radius:4px}
+.stage{margin-top:3px;font-size:11.5px;background:var(--tag-bg);color:var(--tag-ink);border-radius:6px;padding:2px 7px;max-width:100%}
+.stage b{font-weight:650}
+.err .bubble{background:transparent;color:var(--danger);border:1px dashed var(--danger);box-shadow:none;font-size:13px}
+.typing{color:var(--muted);font-style:italic}
+body.hide-stage .stage{display:none}
+
+footer{background:var(--surface);border-top:1px solid var(--line);padding:8px 10px calc(8px + env(safe-area-inset-bottom));display:flex;gap:8px;align-items:flex-end}
+#input{flex:1;resize:none;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:20px;padding:9px 14px;font:inherit;max-height:120px;min-height:40px}
+#input:focus{outline:2px solid var(--brand);outline-offset:-1px}
+#send{background:var(--brand);color:var(--brand-ink);border:0;border-radius:50%;width:42px;height:42px;flex:none;display:grid;place-items:center}
+#send:disabled{opacity:.45}
+
+/* Sheet */
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-end;justify-content:center;z-index:10}
+.sheet.open{display:flex}
+.panel{background:var(--surface);width:100%;max-width:640px;max-height:92dvh;overflow-y:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom))}
+.panel h2{margin:0 0 4px;font-size:17px}
+.panel .hint{color:var(--muted);font-size:13px;margin:0 0 14px}
+.card{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
+.card h3{margin:0 0 2px;font-size:14.5px;display:flex;align-items:center;gap:8px}
+.card .meta{font-size:12px;color:var(--muted);margin-bottom:8px}
+.status{font-size:11px;padding:2px 7px;border-radius:999px;background:var(--chip);color:var(--muted);font-weight:500}
+.status.ok{background:#d7f3e3;color:#0f5f4a}
+@media (prefers-color-scheme: dark){.status.ok{background:#14453a;color:#9be3c6}}
+label{font-size:12.5px;color:var(--muted);display:block;margin:6px 0 4px}
+input[type=text],input[type=password],select,textarea{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:9px 11px;font:inherit;font-size:14px}
+textarea{min-height:120px;resize:vertical;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:8px 12px;font-size:13px}
+.btn.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.btn.danger{color:var(--danger)}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;padding:4px 0}
+.toggle input{width:20px;height:20px;accent-color:var(--brand)}
+.row2{display:flex;gap:8px}.row2>div{flex:1}
+input[type=file]{display:none}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+.toast.show{opacity:1}
+.usage{font-size:12px;color:var(--muted);text-align:center;padding:2px 0 6px}
+</style>
+</head>
+<body>
+<header>
+  <div class="ttl">
+    <h1>Flow Simulator</h1>
+    <div class="sub" id="sub">Belum siap — buka Pengaturan</div>
+  </div>
+  <button class="hbtn" id="btnReset" title="Mulai percakapan baru">Reset</button>
+  <button class="hbtn" id="btnExport" title="Export transcript">Export</button>
+  <button class="hbtn" id="btnSettings">⚙︎</button>
+</header>
+
+<div id="chat"></div>
+<div class="usage" id="usage"></div>
+
+<footer>
+  <textarea id="input" rows="1" placeholder="Ketik sebagai calon konsumen…"></textarea>
+  <button id="send" aria-label="Kirim">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6l.01 6.53L15 12 3.41 13.87z"/></svg>
+  </button>
+</footer>
+
+<!-- Settings sheet -->
+<div class="sheet" id="sheet">
+  <div class="panel">
+    <h2>Pengaturan</h2>
+    <p class="hint">Semua data hanya disimpan di perangkat ini (browser). Upload file .txt / .md, atau tempel teksnya langsung.</p>
+
+    <div class="card">
+      <h3>1. API Key DeepSeek <span class="status" id="stKey">kosong</span></h3>
+      <label for="apiKey">API key</label>
+      <input type="password" id="apiKey" placeholder="sk-…" autocomplete="off">
+      <div class="row2">
+        <div>
+          <label for="model">Model</label>
+          <select id="model">
+            <option value="deepseek-chat">deepseek-chat</option>
+            <option value="deepseek-reasoner">deepseek-reasoner</option>
+            <option value="custom">Lainnya…</option>
+          </select>
+        </div>
+        <div>
+          <label for="temp">Temperature</label>
+          <input type="text" id="temp" inputmode="decimal" value="0.7">
+        </div>
+      </div>
+      <div id="customWrap" style="display:none">
+        <label for="customModel">Nama model</label>
+        <input type="text" id="customModel" placeholder="mis. deepseek-v4">
+      </div>
+      <div class="btns"><button class="btn" id="btnTest">Tes koneksi</button></div>
+    </div>
+
+    <div class="card">
+      <h3>2. Persona &amp; Job Scope <span class="status" id="stPersona">kosong</span></h3>
+      <div class="meta" id="mPersona">Termasuk info produk Glowgen.</div>
+      <textarea id="persona" placeholder="Tempel atau upload persona & job scope di sini…"></textarea>
+      <div class="btns">
+        <button class="btn" data-upload="persona">Upload file</button>
+        <button class="btn danger" data-clear="persona">Hapus</button>
+      </div>
+      <input type="file" id="file-persona" accept=".txt,.md,.markdown,.json,text/plain,text/markdown">
+    </div>
+
+    <div class="card">
+      <h3>3. Rules Handling Flow <span class="status" id="stFlow">kosong</span></h3>
+      <div class="meta" id="mFlow">Upload versi baru kapan saja untuk menguji perubahan rules.</div>
+      <textarea id="flow" placeholder="Tempel atau upload rules handling flow di sini…"></textarea>
+      <div class="btns">
+        <button class="btn" data-upload="flow">Upload file</button>
+        <button class="btn danger" data-clear="flow">Hapus</button>
+      </div>
+      <input type="file" id="file-flow" accept=".txt,.md,.markdown,.json,text/plain,text/markdown">
+    </div>
+
+    <div class="card">
+      <h3>Mode uji</h3>
+      <div class="toggle"><span>Tampilkan label tahap flow di bawah balasan bot</span><input type="checkbox" id="showStage" checked></div>
+      <div class="meta" style="margin:4px 0 0">Bot diminta melaporkan tahap flow yang sedang ia jalankan + alasannya. Label ini hanya terlihat di simulator, tidak masuk ke isi pesan.</div>
+    </div>
+
+    <div class="btns">
+      <button class="btn primary" id="btnSave">Simpan &amp; tutup</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const store = {
+    get(k, d){ try { const v = localStorage.getItem('fs_'+k); return v === null ? d : JSON.parse(v); } catch(e){ return d; } },
+    set(k, v){ try { localStorage.setItem('fs_'+k, JSON.stringify(v)); } catch(e){} }
+  };
+
+  const STAGE_INSTRUCTION = `
+
+=== INSTRUKSI MODE SIMULASI (bukan bagian dari persona) ===
+Ini adalah simulator untuk menguji rules handling flow di atas. Balas konsumen persis seperti biasa sesuai persona dan rules.
+Lalu, di baris paling akhir setiap balasan, WAJIB tambahkan satu baris dengan format persis:
+[[TAHAP: <nama tahap/langkah di rules handling flow yang sedang kamu jalankan> | ALASAN: <1 kalimat singkat kenapa memilih tahap itu, sebutkan sinyal dari pesan konsumen>]]
+Jika tidak ada rule yang cocok, tulis TAHAP: DI LUAR FLOW. Jangan menyebut baris ini di dalam isi balasan.`;
+
+  let cfg = {
+    apiKey: store.get('apiKey',''),
+    model: store.get('model','deepseek-chat'),
+    customModel: store.get('customModel',''),
+    temp: store.get('temp','0.7'),
+    persona: store.get('persona',''),
+    personaName: store.get('personaName',''),
+    flow: store.get('flow',''),
+    flowName: store.get('flowName',''),
+    flowVer: store.get('flowVer',0),
+    showStage: store.get('showStage',true)
+  };
+  let messages = store.get('messages', []); // {role, content, stage?, reason?, flowVer?, t}
+  let usage = store.get('usage', {prompt:0, completion:0});
+  let busy = false;
+
+  const chat = $('chat');
+
+  function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2200); }
+  function modelName(){ return cfg.model === 'custom' ? (cfg.customModel || 'deepseek-chat') : cfg.model; }
+  function ready(){ return cfg.apiKey && cfg.persona.trim() && cfg.flow.trim(); }
+
+  function updateHeader(){
+    const sub = $('sub');
+    if (!ready()){
+      const miss = [];
+      if(!cfg.apiKey) miss.push('API key');
+      if(!cfg.persona.trim()) miss.push('Persona');
+      if(!cfg.flow.trim()) miss.push('Rules flow');
+      sub.textContent = 'Belum lengkap: ' + miss.join(', ');
+    } else {
+      sub.textContent = modelName() + ' · Flow v' + cfg.flowVer + (cfg.flowName ? ' ('+cfg.flowName+')' : '');
+    }
+    document.body.classList.toggle('hide-stage', !cfg.showStage);
+    $('usage').textContent = (usage.prompt||usage.completion) ? `Token sesi ini: ${usage.prompt.toLocaleString('id')} input · ${usage.completion.toLocaleString('id')} output` : '';
+  }
+
+  function parseStage(text){
+    const m = text.match(/\[\[\s*TAHAP\s*:([\s\S]*?)\]\]/i);
+    if(!m) return {clean: text.trim(), stage:null, reason:null};
+    const inner = m[1];
+    const parts = inner.split(/\|\s*ALASAN\s*:/i);
+    return {
+      clean: (text.slice(0,m.index) + text.slice(m.index+m[0].length)).trim(),
+      stage: parts[0].trim(),
+      reason: parts[1] ? parts[1].trim() : null
+    };
+  }
+  function visiblePart(text){ const i = text.indexOf('[['); return (i>=0 ? text.slice(0,i) : text).trim(); }
+
+  function render(){
+    chat.innerHTML = '';
+    if (!messages.length){
+      const e = document.createElement('div'); e.className='empty';
+      e.innerHTML = ready()
+        ? '<b>Siap diuji.</b><br>Mulai chat sebagai calon konsumen Glowgen. Label kuning di bawah balasan bot menunjukkan tahap flow yang sedang dijalankan.'
+        : '<b>Lengkapi 3 hal di Pengaturan ⚙︎</b><br>API key DeepSeek, Persona &amp; Job Scope, dan Rules Handling Flow.';
+      chat.appendChild(e); return;
+    }
+    let lastVer = null;
+    messages.forEach(m => {
+      if (m.role==='assistant' && m.flowVer!=null && lastVer!=null && m.flowVer!==lastVer){
+        const n=document.createElement('div'); n.className='usage'; n.textContent='— rules flow diganti ke v'+m.flowVer+' —'; chat.appendChild(n);
+      }
+      if (m.role==='assistant' && m.flowVer!=null) lastVer = m.flowVer;
+      chat.appendChild(bubble(m));
+    });
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function bubble(m){
+    const row = document.createElement('div');
+    row.className = 'row ' + (m.role==='user' ? 'me' : m.role==='error' ? 'bot err' : 'bot');
+    const b = document.createElement('div'); b.className='bubble'; b.textContent = m.content;
+    row.appendChild(b);
+    if (m.role==='assistant'){
+      const s = document.createElement('div'); s.className='stage';
+      if (m.stage){
+        s.innerHTML = '<b>Tahap:</b> ' + esc(m.stage) + (m.reason ? ' — ' + esc(m.reason) : '');
+      } else { s.innerHTML = '<b>Tahap:</b> (bot tidak melaporkan tahap)'; }
+      row.appendChild(s);
+    }
+    return row;
+  }
+  function esc(s){ return s.replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  function buildPayload(){
+    const sys = cfg.persona.trim() + '\n\n=== RULES HANDLING FLOW ===\n' + cfg.flow.trim() + STAGE_INSTRUCTION;
+    const hist = messages.filter(m=>m.role==='user'||m.role==='assistant').map(m=>({role:m.role, content:m.content}));
+    const body = { model: modelName(), messages: [{role:'system', content: sys}, ...hist], stream: true, stream_options:{include_usage:true} };
+    const t = parseFloat(String(cfg.temp).replace(',','.'));
+    if (!isNaN(t) && modelName()!=='deepseek-reasoner') body.temperature = t;
+    return body;
+  }
+
+  async function send(){
+    const text = $('input').value.trim();
+    if (!text || busy) return;
+    if (!ready()){ openSettings(); toast('Lengkapi pengaturan dulu'); return; }
+    $('input').value=''; autosize();
+    messages.push({role:'user', content:text, t:Date.now()});
+    save(); render();
+    busy = true; $('send').disabled = true;
+
+    const row = document.createElement('div'); row.className='row bot';
+    const b = document.createElement('div'); b.className='bubble typing'; b.textContent='mengetik…';
+    row.appendChild(b); chat.appendChild(row); chat.scrollTop = chat.scrollHeight;
+
+    let full = '';
+    try{
+      const res = await fetch('https://api.deepseek.com/chat/completions', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.apiKey},
+        body: JSON.stringify(buildPayload())
+      });
+      if(!res.ok){
+        let msg = 'HTTP '+res.status;
+        try{ const j = await res.json(); msg += ' — ' + (j.error && j.error.message || JSON.stringify(j)); }catch(e){}
+        if(res.status===401) msg += '\nAPI key tidak valid.';
+        if(res.status===402) msg += '\nSaldo DeepSeek habis.';
+        throw new Error(msg);
+      }
+      const reader = res.body.getReader(); const dec = new TextDecoder(); let buf='';
+      while(true){
+        const {done, value} = await reader.read(); if(done) break;
+        buf += dec.decode(value, {stream:true});
+        const lines = buf.split('\n'); buf = lines.pop();
+        for (const line of lines){
+          const l = line.trim(); if(!l.startsWith('data:')) continue;
+          const data = l.slice(5).trim(); if(data==='[DONE]') continue;
+          try{
+            const j = JSON.parse(data);
+            const d = j.choices && j.choices[0] && j.choices[0].delta;
+            if (d && d.content){ full += d.content; b.classList.remove('typing'); b.textContent = visiblePart(full) || '…'; chat.scrollTop = chat.scrollHeight; }
+            if (j.usage){ usage.prompt += j.usage.prompt_tokens||0; usage.completion += j.usage.completion_tokens||0; }
+          }catch(e){}
+        }
+      }
+      const p = parseStage(full);
+      messages.push({role:'assistant', content:p.clean || '(balasan kosong)', stage:p.stage, reason:p.reason, flowVer:cfg.flowVer, t:Date.now()});
+    }catch(err){
+      let msg = String(err.message||err);
+      if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) msg = 'Gagal terhubung ke DeepSeek. Cek koneksi internet atau API key.';
+      messages.push({role:'error', content:msg, t:Date.now()});
+    }
+    busy=false; $('send').disabled=false;
+    save(); render(); updateHeader();
+  }
+
+  function save(){ store.set('messages', messages); store.set('usage', usage); }
+
+  // Settings
+  function openSettings(){
+    $('apiKey').value = cfg.apiKey; $('model').value = cfg.model; $('customModel').value = cfg.customModel;
+    $('customWrap').style.display = cfg.model==='custom' ? 'block':'none';
+    $('temp').value = cfg.temp; $('persona').value = cfg.persona; $('flow').value = cfg.flow;
+    $('showStage').checked = cfg.showStage; refreshStatus();
+    $('sheet').classList.add('open');
+  }
+  function refreshStatus(){
+    setSt('stKey', $('apiKey').value.trim(), 'tersimpan');
+    setSt('stPersona', $('persona').value.trim(), cfg.personaName || 'terisi');
+    setSt('stFlow', $('flow').value.trim(), 'v'+(cfg.flowVer||1));
+    $('mPersona').textContent = $('persona').value.trim() ? `${$('persona').value.length.toLocaleString('id')} karakter${cfg.personaName?' · '+cfg.personaName:''}` : 'Termasuk info produk Glowgen.';
+    $('mFlow').textContent = $('flow').value.trim() ? `${$('flow').value.length.toLocaleString('id')} karakter${cfg.flowName?' · '+cfg.flowName:''}` : 'Upload versi baru kapan saja untuk menguji perubahan rules.';
+  }
+  function setSt(id, ok, label){ const e=$(id); e.textContent = ok ? label : 'kosong'; e.classList.toggle('ok', !!ok); }
+
+  function saveSettings(){
+    const newFlow = $('flow').value;
+    if (newFlow.trim() && newFlow !== cfg.flow){
+      cfg.flowVer = (cfg.flowVer||0) + 1;
+      if (messages.length) toast('Rules flow v'+cfg.flowVer+' aktif — berlaku mulai balasan berikutnya');
+    }
+    cfg.apiKey = $('apiKey').value.trim(); cfg.model = $('model').value; cfg.customModel = $('customModel').value.trim();
+    cfg.temp = $('temp').value.trim() || '0.7'; cfg.persona = $('persona').value; cfg.flow = newFlow;
+    cfg.showStage = $('showStage').checked;
+    Object.entries(cfg).forEach(([k,v])=>store.set(k,v));
+    $('sheet').classList.remove('open'); updateHeader(); render();
+  }
+
+  document.querySelectorAll('[data-upload]').forEach(btn=>{
+    const key = btn.dataset.upload; const inp = $('file-'+key);
+    btn.onclick = () => inp.click();
+    inp.onchange = async () => {
+      const f = inp.files[0]; if(!f) return;
+      const txt = await f.text();
+      $(key).value = txt;
+      if (key==='persona') cfg.personaName = f.name; else cfg.flowName = f.name;
+      refreshStatus(); toast(f.name + ' dimuat'); inp.value='';
+    };
+  });
+  document.querySelectorAll('[data-clear]').forEach(btn=>{
+    btn.onclick = () => { const k=btn.dataset.clear; $(k).value=''; if(k==='persona') cfg.personaName=''; else cfg.flowName=''; refreshStatus(); };
+  });
+  ['apiKey','persona','flow'].forEach(id=>$(id).addEventListener('input', refreshStatus));
+  $('model').onchange = () => { $('customWrap').style.display = $('model').value==='custom' ? 'block':'none'; };
+  $('btnSave').onclick = saveSettings;
+  $('btnSettings').onclick = openSettings;
+  $('sheet').addEventListener('click', e=>{ if(e.target.id==='sheet') saveSettings(); });
+
+  $('btnTest').onclick = async () => {
+    const key = $('apiKey').value.trim(); if(!key){ toast('Isi API key dulu'); return; }
+    toast('Mengetes…');
+    try{
+      const r = await fetch('https://api.deepseek.com/user/balance', {headers:{'Authorization':'Bearer '+key}});
+      if(!r.ok){ toast('Gagal: HTTP '+r.status + (r.status===401?' (key salah)':'')); return; }
+      const j = await r.json(); const bi = j.balance_infos && j.balance_infos[0];
+      toast('Terhubung ✓' + (bi ? ` Saldo: ${bi.total_balance} ${bi.currency}` : ''));
+    }catch(e){ toast('Tidak bisa terhubung ke DeepSeek'); }
+  };
+
+  $('btnReset').onclick = () => {
+    if (!messages.length) return;
+    if (!confirm('Mulai percakapan baru? Chat sekarang akan dihapus (export dulu kalau perlu).')) return;
+    messages = []; usage = {prompt:0, completion:0}; save(); render(); updateHeader();
+  };
+
+  $('btnExport').onclick = () => {
+    if (!messages.length){ toast('Belum ada percakapan'); return; }
+    const d = new Date(); const pad = n=>String(n).padStart(2,'0');
+    const stamp = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+    let out = `TRANSCRIPT SIMULASI HANDLING FLOW\nTanggal: ${d.toLocaleString('id-ID')}\nModel: ${modelName()}\nPersona: ${cfg.personaName||'(teks manual)'}\nRules flow: v${cfg.flowVer} ${cfg.flowName?'('+cfg.flowName+')':'(teks manual)'}\n\n`;
+    messages.forEach(m=>{
+      const time = new Date(m.t).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+      if (m.role==='user') out += `[${time}] KONSUMEN:\n${m.content}\n\n`;
+      else if (m.role==='assistant') out += `[${time}] BOT:\n${m.content}\n  >> Tahap: ${m.stage||'(tidak dilaporkan)'}${m.reason?' | Alasan: '+m.reason:''}${m.flowVer!=null?' | flow v'+m.flowVer:''}\n\n`;
+      else out += `[${time}] ERROR: ${m.content}\n\n`;
+    });
+    out += `Token: ${usage.prompt} input / ${usage.completion} output\n`;
+    const blob = new Blob([out], {type:'text/plain'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `simulasi-flow_${stamp}.txt`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  };
+
+  const input = $('input');
+  function autosize(){ input.style.height='auto'; input.style.height = Math.min(input.scrollHeight,120)+'px'; }
+  input.addEventListener('input', autosize);
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey && !('ontouchstart' in window)){ e.preventDefault(); send(); } });
+  $('send').onclick = send;
+
+  if ('serviceWorker' in navigator) { window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+
+  updateHeader(); render();
+  if (!ready()) openSettings();
+})();
+</script>
+</body>
+</html>
